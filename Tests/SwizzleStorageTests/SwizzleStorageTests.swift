@@ -16,7 +16,7 @@ final class SwizzleStorageTests: XCTestCase {
 
         Swizzle.shared.configure(projectId: "test")
 
-        @SwizzleStorage(key: key) var testValue: String
+        @SwizzleStorage("testKey") var testValue: String
         testValue = expectedValue
 
         // Wait for the asynchronous save operation to complete

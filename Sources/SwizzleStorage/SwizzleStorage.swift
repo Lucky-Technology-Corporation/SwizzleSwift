@@ -13,7 +13,7 @@ public class Swizzle {
     
     public func configure(projectId: String, test: Bool = false) {
         
-        let url = URL(string: "https://your-server.com/api/endpoint")
+        let url = URL(string: "https://euler-i733tg4iuq-uc.a.run.app/api/v1/"+projectId)
         Task {
             do {
                 // Fetch connectionString from server
@@ -39,91 +39,118 @@ public class Swizzle {
         return connectionString
     }
 
-    
-    func loadText(forKey key: String, completion: @escaping (String) -> Void) {
+    func loadValue<T: Codable>(forKey key: String, defaultValue: T?, completion: @escaping (T?) -> Void) {
+        guard let deviceId = getUniqueDeviceIdentifier() else { return }
+
         Task {
             do {
                 guard let collection = self.collection else { return }
-                let query: BSONDocument = ["name": .string(key)]
+                let query: BSONDocument = ["deviceId": .string(deviceId)]
                 let document = try await collection.findOne(query)
-                let fetchedText = document?["text"]?.stringValue ?? ""
-                DispatchQueue.main.async {
-                    completion(fetchedText)
+                if let jsonData = document?[key]?.stringValue?.data(using: .utf8),
+                   let fetchedValue = try? JSONDecoder().decode(T.self, from: jsonData) {
+                    DispatchQueue.main.async {
+                        completion(fetchedValue)
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(defaultValue)
+                    }
                 }
             } catch {
                 print("Failed to fetch data for key \(key): \(error)")
                 DispatchQueue.main.async {
-                    completion("")
+                    completion(defaultValue)
                 }
             }
         }
     }
 
-    func saveText(text: String, forKey key: String) {
+    func saveValue<T: Codable>(_ value: T?, forKey key: String) {
+        guard let deviceId = getUniqueDeviceIdentifier() else { return }
+        
         Task {
             do {
                 guard let collection = self.collection else { return }
-                let document: BSONDocument = ["name": .string(key), "text": .string(text)]
-                try await collection.insertOne(document)
+                let query: BSONDocument = ["deviceId": .string(deviceId)]
+                
+                if let value = value,
+                   let jsonData = try? JSONEncoder().encode(value),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    let update: BSONDocument = ["$set": .document([key: .string(jsonString)])]
+                    try await collection.updateOne(filter: query, update: update, options: UpdateOptions(upsert: true))
+                } else {
+                    let update: BSONDocument = ["$unset": .document([key: .int32(1)])]
+                    try await collection.updateOne(filter: query, update: update)
+                }
             } catch {
                 print("Failed to store data for key \(key): \(error)")
             }
         }
     }
-
-}
-
-public class SwizzleStore: ObservableObject {
-    @Published var text: String
-    let key: String
-
-    init(key: String) {
-        self.key = key
-        if let cachedValue = Swizzle.shared.userDefaults.string(forKey: key) {
-            self.text = cachedValue
-        } else {
-            self.text = ""
-            Swizzle.shared.loadText(forKey: key) { fetchedText in
-                DispatchQueue.main.async {
-                    self.text = fetchedText
-                }
-            }
-        }
+    
+    func getUniqueDeviceIdentifier() -> String? {
+        let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        let serialNumberAsCFString = IORegistryEntryCreateCFProperty(platformExpert, kIOPlatformSerialNumberKey as CFString, kCFAllocatorDefault, 0)
+        IOObjectRelease(platformExpert)
+        return serialNumberAsCFString?.takeUnretainedValue() as? String
+    }
+    
+    
+    //APIs
+    func get<T: Decodable>(_ url: URL) async throws -> T {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(T.self, from: data)
+        return response
     }
 
-    func save(newValue: String) {
-        Swizzle.shared.userDefaults.set(newValue, forKey: key)
-        text = newValue
-        Swizzle.shared.saveText(text: newValue, forKey: key)
+    // Make a POST request, sending JSON, and decode the response
+    func post<T: Decodable>(_ url: URL, data: [String: Any]) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
+        request.httpBody = jsonData
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(T.self, from: data)
+        return response
     }
+
 }
 
 @propertyWrapper
-struct SwizzleStorage {
-    private let key: String
-    private var value: String {
-        didSet {
-            Swizzle.shared.userDefaults.set(value, forKey: key)
-            Swizzle.shared.saveText(text: value, forKey: key)
+public class SwizzleStorage<T: Codable>: ObservableObject {
+    @Published private var value: T?
+    let key: String
+
+    public var wrappedValue: T? {
+        get { value }
+        set {
+            value = newValue
+            if let newValue = newValue {
+                Swizzle.shared.saveValue(newValue, forKey: key)
+            }
         }
     }
 
-    var wrappedValue: String {
-        get { value }
-        set { value = newValue }
-    }
-
-    init(key: String) {
+    public init(_ key: String, defaultValue: T? = nil) {
         self.key = key
-        if let cachedValue = Swizzle.shared.userDefaults.string(forKey: key) {
-            self.value = cachedValue
+        if let data = Swizzle.shared.userDefaults.data(forKey: key),
+           let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
+            self.value = loadedValue
         } else {
-            self.value = ""
-            var fetchedText = ""
-            Swizzle.shared.loadText(forKey: key) { text in
-                fetchedText = text
+            self.value = defaultValue
+            if let defaultValue = defaultValue {
+                Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
+                    DispatchQueue.main.async {
+                        self?.value = fetchedValue
+                    }
+                }
             }
-            self.value = fetchedText
         }
     }
 }
