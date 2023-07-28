@@ -1,155 +1,204 @@
 import SwiftUI
-import NIOPosix
-import MongoSwift
 
 public class Swizzle {
     public static let shared = Swizzle()
-    var client: MongoClient?
-    var database: MongoDatabase?
-    var collection: MongoCollection<BSONDocument>?
-    let userDefaults = UserDefaults.standard // UserDefaults as cache
+    let userDefaults = UserDefaults.standard
     
-    private init() {} // Prevent clients from creating another instance.
+    private(set) var accessToken: String? {
+        didSet {
+            userDefaults.setValue(accessToken, forKey: "accessTokenSwizzle")
+        }
+    }
     
-    public func configure(projectId: String, test: Bool = false) {
-        
-        let url = URL(string: "https://euler-i733tg4iuq-uc.a.run.app/api/v1/"+projectId)
-        Task {
-            do {
-                // Fetch connectionString from server
-                let connectionString = try await fetchConnectionString(from: url!)
-                
-                let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
-                client = try? MongoClient(connectionString, using: elg)
-                database = client?.db(projectId)
-                collection = database?.collection("device_data")
-            } catch {
-                // handle errors
-                print("Error configuring MongoDBManager: \(error)")
+    private(set) var refreshToken: String? {
+        didSet {
+            userDefaults.setValue(refreshToken, forKey: "refreshTokenSwizzle")
+        }
+    }
+    
+    private(set) var userId: String? {
+        didSet {
+            userDefaults.setValue(userId, forKey: "userIdSwizzle")
+        }
+    }
+    
+    private(set) var deviceId: String?
+    
+    private var apiBaseURL: URL? = nil {
+        didSet {
+            self.deviceId = getUniqueDeviceIdentifier()
+            if let _ = apiBaseURL, deviceId != nil {
+                self.refreshOrLoginIfNeeded()
+                self.accessToken = userDefaults.string(forKey: "accessTokenSwizzle")
+                self.refreshToken = userDefaults.string(forKey: "refreshTokenSwizzle")
+                self.userId = userDefaults.string(forKey: "userIdSwizzle")
             }
         }
     }
-    
-    private func fetchConnectionString(from url: URL) async throws -> String {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-        guard let connectionString = json?["connectionString"] as? String else {
-            throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to parse connectionString"])
+
+    private init() { }
+
+    public func configure(projectId: String, test: Bool = false) {
+        var url = "https://\(projectId).swizzle.run"
+        if(test){
+            url = "https://test.\(projectId).swizzle.run"
         }
-        return connectionString
+        apiBaseURL = URL(string: url)
     }
-
+    
+    //Load and save to DB
     func loadValue<T: Codable>(forKey key: String, defaultValue: T?, completion: @escaping (T?) -> Void) {
-        guard let deviceId = getUniqueDeviceIdentifier() else { return }
-
+        guard let apiBaseURL = apiBaseURL else { return }
+        
+        let queryURL = apiBaseURL.appendingPathComponent("/db/\(key)/")
         Task {
             do {
-                guard let collection = self.collection else { return }
-                let query: BSONDocument = ["deviceId": .string(deviceId)]
-                let document = try await collection.findOne(query)
-                if let jsonData = document?[key]?.stringValue?.data(using: .utf8),
-                   let fetchedValue = try? JSONDecoder().decode(T.self, from: jsonData) {
+                let deviceData: T = try await get(queryURL, expecting: T.self)
+                DispatchQueue.main.async {
+                    completion(deviceData)
+                }
+            } catch {
+                if let decodingError = error as? DecodingError,
+                   case .keyNotFound = decodingError {
                     DispatchQueue.main.async {
-                        completion(fetchedValue)
+                        completion(defaultValue)
                     }
                 } else {
+                    print("Failed to fetch data for key \(key): \(error)")
                     DispatchQueue.main.async {
                         completion(defaultValue)
                     }
                 }
-            } catch {
-                print("Failed to fetch data for key \(key): \(error)")
-                DispatchQueue.main.async {
-                    completion(defaultValue)
-                }
             }
         }
     }
 
-    func saveValue<T: Codable>(_ value: T?, forKey key: String) {
-        guard let deviceId = getUniqueDeviceIdentifier() else { return }
+    func saveValue<T: Codable>(_ value: T, forKey key: String) {
+        guard let apiBaseURL = apiBaseURL else { return }
         
+        let queryURL = apiBaseURL.appendingPathComponent("/db/\(key)/")
         Task {
             do {
-                guard let collection = self.collection else { return }
-                let query: BSONDocument = ["deviceId": .string(deviceId)]
-                
-                if let value = value,
-                   let jsonData = try? JSONEncoder().encode(value),
-                   let jsonString = String(data: jsonData, encoding: .utf8) {
-                    let update: BSONDocument = ["$set": .document([key: .string(jsonString)])]
-                    try await collection.updateOne(filter: query, update: update, options: UpdateOptions(upsert: true))
-                } else {
-                    let update: BSONDocument = ["$unset": .document([key: .int32(1)])]
-                    try await collection.updateOne(filter: query, update: update)
-                }
+                try await post(queryURL, data: value)
             } catch {
                 print("Failed to store data for key \(key): \(error)")
             }
         }
     }
     
-    func getUniqueDeviceIdentifier() -> String? {
-        let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
-        let serialNumberAsCFString = IORegistryEntryCreateCFProperty(platformExpert, kIOPlatformSerialNumberKey as CFString, kCFAllocatorDefault, 0)
-        IOObjectRelease(platformExpert)
-        return serialNumberAsCFString?.takeUnretainedValue() as? String
-    }
-    
-    
-    //APIs
-    func get<T: Decodable>(_ url: URL) async throws -> T {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(T.self, from: data)
-        return response
-    }
-
-    // Make a POST request, sending JSON, and decode the response
-    func post<T: Decodable>(_ url: URL, data: [String: Any]) async throws -> T {
+    //REST APIs
+    func get<T: Decodable>(_ url: URL, expecting type: T.Type) async throws -> T {
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
-        request.httpBody = jsonData
-
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
         let (data, _) = try await URLSession.shared.data(for: request)
         let decoder = JSONDecoder()
         let response = try decoder.decode(T.self, from: data)
         return response
     }
 
+    func post<T: Encodable>(_ url: URL, data: T) async throws {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(data)
+        request.httpBody = jsonData
+        _ = try await URLSession.shared.data(for: request)
+    }
+
+    func post<T: Encodable, U: Decodable>(_ url: URL, data: T) async throws -> U {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(data)
+        request.httpBody = jsonData
+        
+        let (responseData, _) = try await URLSession.shared.data(for: request)
+        let decoder = JSONDecoder()
+        
+        let response = try decoder.decode(U.self, from: responseData)
+        
+        return response
+    }
+
+    
+    //AUTH
+    func refreshOrLoginIfNeeded() {
+        if let refreshToken = refreshToken {
+            refreshAccessToken(refreshToken: refreshToken)
+        } else {
+            anonymousLogin()
+        }
+    }
+    
+    private func anonymousLogin() {
+        let params = ["deviceId": deviceId]
+        Task {
+            do {
+                let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("/swizzle/auth/anonymous"), data: params)
+                accessToken = response.accessToken
+                refreshToken = response.refreshToken
+            } catch {
+                print("Anonymous login failed: \(error)")
+            }
+        }
+    }
+
+    private func refreshAccessToken(refreshToken: String) {
+        let params = ["refreshToken": refreshToken]
+        Task {
+            do {
+                let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("/swizzle/auth/refresh"), data: params)
+                accessToken = response.accessToken
+            } catch {
+                print("Failed to refresh access token: \(error)")
+                anonymousLogin() // Attempt an anonymous login if token refresh fails
+            }
+        }
+    }
 }
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
     @Published private var value: T?
     let key: String
-
+    var defaultValue: T?
+    
     public var wrappedValue: T? {
         get { value }
         set {
             value = newValue
             if let newValue = newValue {
                 Swizzle.shared.saveValue(newValue, forKey: key)
+            } else {
+                print("[Swizzle] Can't update a property of a nil object")
             }
         }
     }
-
+    
     public init(_ key: String, defaultValue: T? = nil) {
         self.key = key
-        if let data = Swizzle.shared.userDefaults.data(forKey: key),
-           let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
+        self.defaultValue = defaultValue
+        
+        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
+            refresh() //refresh after
         } else {
             self.value = defaultValue
-            if let defaultValue = defaultValue {
-                Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
-                    DispatchQueue.main.async {
-                        self?.value = fetchedValue
-                    }
-                }
+            refresh()
+        }
+    }
+    
+    public func refresh(completion: ((T?) -> Void)? = nil) {
+        Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
+            DispatchQueue.main.async {
+                self?.value = fetchedValue
             }
         }
     }

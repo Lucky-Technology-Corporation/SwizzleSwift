@@ -11,15 +11,11 @@ let package = Package(
             name: "SwizzleStorage",
             targets: ["SwizzleStorage"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/mongodb/mongo-swift-driver", from: "1.0.1"),
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "SwizzleStorage",
-            dependencies: [
-                .product(name: "MongoSwift", package: "mongo-swift-driver"),
-            ]),
+            dependencies: [ ]),
         .testTarget(
             name: "SwizzleStorageTests",
             dependencies: ["SwizzleStorage"]),
