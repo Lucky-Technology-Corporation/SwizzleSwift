@@ -41,7 +41,10 @@ public class Swizzle {
     public func configure(projectId: String, test: Bool = false) {
         var url = "https://\(projectId).swizzle.run"
         if(test){
-            url = "https://test.\(projectId).swizzle.run"
+            url = "https://wealth-leaderboard-backend.vercel.app/"
+        } else{
+            print("[Swizzle] ERROR - your production environment has not been set up!")
+            return
         }
         apiBaseURL = URL(string: url)
     }
