@@ -4,7 +4,7 @@ import XCTest
 final class SwizzleStorageTests: XCTestCase {
 
     func testSetFullObject() async throws {
-        Swizzle.shared.configure(projectId: "test")
+        Swizzle.shared.configure(projectId: "test", test: true)
 
         struct GenericObject: Codable {
             var id: Int
@@ -27,7 +27,7 @@ final class SwizzleStorageTests: XCTestCase {
     }
     
     func testSetOnePropery() async throws {
-        Swizzle.shared.configure(projectId: "test")
+        Swizzle.shared.configure(projectId: "test", test: true)
 
         struct GenericObject: Codable {
             var id: Int
@@ -53,7 +53,7 @@ final class SwizzleStorageTests: XCTestCase {
     }
     
     func testLocalCaching() async throws {
-        Swizzle.shared.configure(projectId: "test")
+        Swizzle.shared.configure(projectId: "test", test: true)
 
         struct GenericObject: Codable {
             var id: Int
@@ -67,6 +67,25 @@ final class SwizzleStorageTests: XCTestCase {
         genericObject = GenericObject(id: 0, name: "third", email: "a@a.com")
         XCTAssertEqual(genericObject?.name, "third")
     }
-
-
+    
+    func testGetFunctionCall() async throws {
+        struct PongStruct: Codable {
+            var message: String
+        }
+        Swizzle.shared.configure(projectId: "test", test: true)
+        let pong: PongStruct = try await Swizzle.shared.get("ping", expecting: PongStruct.self)
+        XCTAssertEqual(pong.message, "pong")
+    }
+    
+    func testPostFunctionCall() async throws {
+        struct PingStruct: Codable{
+            var message: String
+        }
+        struct PongStruct: Codable {
+            var message: String
+        }
+        Swizzle.shared.configure(projectId: "test", test: true)
+        let pong: PongStruct = try await Swizzle.shared.post("ping", data: PingStruct(message: "pong"))
+        XCTAssertEqual(pong.message, "pong")
+    }
 }

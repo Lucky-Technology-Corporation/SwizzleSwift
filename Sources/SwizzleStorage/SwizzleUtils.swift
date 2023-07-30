@@ -22,3 +22,15 @@ struct SwizzleLoginResponse: Codable {
     let accessToken: String
     let refreshToken: String
 }
+
+enum SwizzleError: LocalizedError {
+    case swizzleNotInitialized
+    
+    var errorDescription: String? {
+        switch self {
+        case .swizzleNotInitialized:
+            return NSLocalizedString("Swizzle has not been initialized yet. Call Swizzle.shared.configure(projectId: \"YourProjectID\") before making any requests", comment: "Swizzle not initialized")
+        }
+    }
+}
+

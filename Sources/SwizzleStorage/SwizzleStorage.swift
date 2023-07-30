@@ -53,7 +53,7 @@ public class Swizzle {
     func loadValue<T: Codable>(forKey key: String, defaultValue: T?, completion: @escaping (T?) -> Void) {
         guard let apiBaseURL = apiBaseURL else { return }
         
-        let queryURL = apiBaseURL.appendingPathComponent("/db/\(key)/")
+        let queryURL = apiBaseURL.appendingPathComponent("/swizzle/db/\(key)/")
         Task {
             do {
                 let deviceData: T = try await get(queryURL, expecting: T.self)
@@ -79,7 +79,7 @@ public class Swizzle {
     func saveValue<T: Codable>(_ value: T, forKey key: String) {
         guard let apiBaseURL = apiBaseURL else { return }
         
-        let queryURL = apiBaseURL.appendingPathComponent("/db/\(key)/")
+        let queryURL = apiBaseURL.appendingPathComponent("/swizzle/db/\(key)/")
         Task {
             do {
                 try await post(queryURL, data: value)
@@ -88,6 +88,26 @@ public class Swizzle {
             }
         }
     }
+    
+    //Easy function call helpers
+    func get<T: Decodable>(_ functionName: String, expecting type: T.Type) async throws -> T {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let queryURL = apiBaseURL.appendingPathComponent(functionName)
+        return try await get(queryURL, expecting: type)
+    }
+    
+    func post<T: Encodable>(_ functionName: String, data: T) async throws {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let queryURL = apiBaseURL.appendingPathComponent(functionName)
+        return try await post(queryURL, data: data)
+    }
+    
+    func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let queryURL = apiBaseURL.appendingPathComponent(functionName)
+        return try await post(queryURL, data: data)
+    }
+    
     
     //REST APIs
     func get<T: Decodable>(_ url: URL, expecting type: T.Type) async throws -> T {
