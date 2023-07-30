@@ -38,7 +38,7 @@ public class Swizzle {
 
     private init() { }
 
-    public func configure(projectId: String, test: Bool = false) {
+    public func configure(projectId: String, test: Bool = true) {
         var url = "https://\(projectId).swizzle.run"
         if(test){
             url = "https://wealth-leaderboard-backend.vercel.app/"
