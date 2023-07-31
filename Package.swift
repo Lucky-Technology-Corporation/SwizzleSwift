@@ -5,6 +5,7 @@ let package = Package(
     name: "SwizzleStorage",
     platforms: [
         .macOS(.v10_15),
+        .iOS(.v13)
     ],
     products: [
         .library(
