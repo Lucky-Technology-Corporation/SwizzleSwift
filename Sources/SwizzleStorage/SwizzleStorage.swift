@@ -46,6 +46,7 @@ public class Swizzle {
             print("[Swizzle] ERROR - your production environment has not been set up!")
             return
         }
+//        url = "http://localhost:3000"
         apiBaseURL = URL(string: url)
     }
     
@@ -174,11 +175,12 @@ public class Swizzle {
     }
 
     private func refreshAccessToken(refreshToken: String) {
-        let params = ["refreshToken": refreshToken]
+        let params = ["refreshToken": refreshToken, "deviceId": deviceId]
         Task {
             do {
                 let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("/swizzle/auth/refresh"), data: params)
-                accessToken = response.accessToken
+                self.accessToken = response.accessToken
+                self.refreshToken = response.refreshToken
             } catch {
                 print("Failed to refresh access token: \(error)")
                 anonymousLogin() // Attempt an anonymous login if token refresh fails
