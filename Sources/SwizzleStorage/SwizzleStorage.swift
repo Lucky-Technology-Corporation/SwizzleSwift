@@ -56,7 +56,7 @@ public class Swizzle {
         let queryURL = apiBaseURL.appendingPathComponent("/swizzle/db/\(key)/")
         Task {
             do {
-                let deviceData: T = try await get(queryURL, expecting: T.self)
+                let deviceData: T = try await get(queryURL)
                 DispatchQueue.main.async {
                     completion(deviceData)
                 }
@@ -90,10 +90,10 @@ public class Swizzle {
     }
     
     //Easy function call helpers
-    public func get<T: Decodable>(_ functionName: String, expecting type: T.Type) async throws -> T {
+    public func get<T: Decodable>(_ functionName: String) async throws -> T {
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
-        return try await get(queryURL, expecting: type)
+        return try await get(queryURL)
     }
     
     public func post<T: Encodable>(_ functionName: String, data: T) async throws {
@@ -110,7 +110,7 @@ public class Swizzle {
     
     
     //REST APIs
-    func get<T: Decodable>(_ url: URL, expecting type: T.Type) async throws -> T {
+    func get<T: Decodable>(_ url: URL) async throws -> T {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")

@@ -73,7 +73,7 @@ final class SwizzleStorageTests: XCTestCase {
             var message: String
         }
         Swizzle.shared.configure(projectId: "test", test: true)
-        let pong: PongStruct = try await Swizzle.shared.get("swizzle/internal/ping", expecting: PongStruct.self)
+        let pong: PongStruct = try await Swizzle.shared.get("swizzle/internal/ping")
         XCTAssertEqual(pong.message, "pong")
     }
     
