@@ -73,7 +73,7 @@ final class SwizzleStorageTests: XCTestCase {
             var message: String
         }
         Swizzle.shared.configure(projectId: "test", test: true)
-        let pong: PongStruct = try await Swizzle.shared.get("ping", expecting: PongStruct.self)
+        let pong: PongStruct = try await Swizzle.shared.get("swizzle/internal/ping", expecting: PongStruct.self)
         XCTAssertEqual(pong.message, "pong")
     }
     
@@ -85,7 +85,7 @@ final class SwizzleStorageTests: XCTestCase {
             var message: String
         }
         Swizzle.shared.configure(projectId: "test", test: true)
-        let pong: PongStruct = try await Swizzle.shared.post("ping", data: PingStruct(message: "pong"))
+        let pong: PongStruct = try await Swizzle.shared.post("swizzle/internal/ping", data: PingStruct(message: "pong"))
         XCTAssertEqual(pong.message, "pong")
     }
     
