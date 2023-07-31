@@ -6,15 +6,44 @@
 //
 
 import Foundation
+import Security
 
 extension Swizzle {
-    func getUniqueDeviceIdentifier() -> String? {
-        let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
-        let serialNumberAsCFString = IORegistryEntryCreateCFProperty(platformExpert, kIOPlatformSerialNumberKey as CFString, kCFAllocatorDefault, 0)
-        IOObjectRelease(platformExpert)
-        return serialNumberAsCFString?.takeUnretainedValue() as? String
-    }
     
+    func getUniqueDeviceIdentifier() -> String? {
+        let account = "SwizzleDeviceId" // an account attribute to associate the UID with
+
+        //Try to get UID
+        let accountData = account.data(using: String.Encoding.utf8)!
+        let getQuery: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+                                       kSecAttrAccount as String: accountData,
+                                       kSecReturnData as String: kCFBooleanTrue!,
+                                       kSecMatchLimit as String: kSecMatchLimitOne]
+
+        var dataTypeRef: AnyObject?
+        let getStatus: OSStatus = SecItemCopyMatching(getQuery as CFDictionary, &dataTypeRef)
+
+        if getStatus == errSecSuccess {
+            if let retrievedData = dataTypeRef as? Data,
+               let uid = String(data: retrievedData, encoding: String.Encoding.utf8) {
+                return uid
+            }
+        }
+
+        //Save a new UID if we couldn't find one
+        let uid: String = UUID().uuidString
+        let uidData = uid.data(using: String.Encoding.utf8)!
+
+        let addQuery: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+                                       kSecAttrAccount as String: accountData,
+                                       kSecValueData as String: uidData]
+
+        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+        if addStatus != errSecSuccess {
+            print("Couldn't save UID to Keychain: \(addStatus)")
+        }
+        return uid
+    }
 }
 
 struct SwizzleLoginResponse: Codable {

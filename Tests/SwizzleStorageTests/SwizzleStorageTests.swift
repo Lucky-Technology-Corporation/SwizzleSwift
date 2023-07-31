@@ -88,4 +88,8 @@ final class SwizzleStorageTests: XCTestCase {
         let pong: PongStruct = try await Swizzle.shared.post("ping", data: PingStruct(message: "pong"))
         XCTAssertEqual(pong.message, "pong")
     }
+    
+    func testDeviceId(){
+        print(Swizzle.shared.getUniqueDeviceIdentifier())
+    }
 }
