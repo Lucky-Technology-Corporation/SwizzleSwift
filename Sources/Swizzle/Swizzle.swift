@@ -161,7 +161,9 @@ public class Swizzle {
         while isAuthenticating {
             do {
                 try await Task.sleep(nanoseconds: 100_000_000) // Sleeps for 0.1 seconds
-            } catch {  }
+            } catch {
+                print(error)
+            }
         }
     }
 
