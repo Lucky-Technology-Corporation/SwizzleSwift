@@ -90,19 +90,19 @@ public class Swizzle {
     }
     
     //Easy function call helpers
-    func get<T: Decodable>(_ functionName: String, expecting type: T.Type) async throws -> T {
+    public func get<T: Decodable>(_ functionName: String, expecting type: T.Type) async throws -> T {
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await get(queryURL, expecting: type)
     }
     
-    func post<T: Encodable>(_ functionName: String, data: T) async throws {
+    public func post<T: Encodable>(_ functionName: String, data: T) async throws {
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await post(queryURL, data: data)
     }
     
-    func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
+    public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await post(queryURL, data: data)
