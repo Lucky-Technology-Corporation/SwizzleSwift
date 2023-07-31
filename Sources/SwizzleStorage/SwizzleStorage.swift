@@ -28,10 +28,10 @@ public class Swizzle {
         didSet {
             self.deviceId = getUniqueDeviceIdentifier()
             if let _ = apiBaseURL, deviceId != nil {
-                self.refreshOrLoginIfNeeded()
                 self.accessToken = userDefaults.string(forKey: "accessTokenSwizzle")
                 self.refreshToken = userDefaults.string(forKey: "refreshTokenSwizzle")
                 self.userId = userDefaults.string(forKey: "userIdSwizzle")
+                self.refreshOrLoginIfNeeded()
             }
         }
     }
