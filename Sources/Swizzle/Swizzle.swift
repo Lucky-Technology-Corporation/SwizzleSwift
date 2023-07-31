@@ -2,11 +2,13 @@ import SwiftUI
 
 public class Swizzle {
     public static let shared = Swizzle()
+
     let userDefaults = UserDefaults.standard
-    
+
     private(set) var accessToken: String? {
         didSet {
             userDefaults.setValue(accessToken, forKey: "accessTokenSwizzle")
+            isAuthenticating = false
         }
     }
     
@@ -23,7 +25,9 @@ public class Swizzle {
     }
     
     private(set) var deviceId: String?
-    
+
+    private var isAuthenticating: Bool = false
+
     private var apiBaseURL: URL? = nil {
         didSet {
             self.deviceId = getUniqueDeviceIdentifier()
@@ -46,7 +50,7 @@ public class Swizzle {
             print("[Swizzle] ERROR - your production environment has not been set up!")
             return
         }
-//        url = "http://localhost:3000"
+        url = "http://localhost:3000"
         apiBaseURL = URL(string: url)
     }
     
@@ -54,7 +58,7 @@ public class Swizzle {
     func loadValue<T: Codable>(forKey key: String, defaultValue: T?, completion: @escaping (T?) -> Void) {
         guard let apiBaseURL = apiBaseURL else { return }
         
-        let queryURL = apiBaseURL.appendingPathComponent("/swizzle/db/\(key)/")
+        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
             do {
                 let deviceData: T = try await get(queryURL)
@@ -80,7 +84,7 @@ public class Swizzle {
     func saveValue<T: Codable>(_ value: T, forKey key: String) {
         guard let apiBaseURL = apiBaseURL else { return }
         
-        let queryURL = apiBaseURL.appendingPathComponent("/swizzle/db/\(key)/")
+        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
             do {
                 try await post(queryURL, data: value)
@@ -92,18 +96,21 @@ public class Swizzle {
     
     //Easy function call helpers
     public func get<T: Decodable>(_ functionName: String) async throws -> T {
+        await waitForAuthentication()
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await get(queryURL)
     }
     
     public func post<T: Encodable>(_ functionName: String, data: T) async throws {
+        await waitForAuthentication()
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await post(queryURL, data: data)
     }
     
     public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
+        await waitForAuthentication()
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await post(queryURL, data: data)
@@ -150,41 +157,53 @@ public class Swizzle {
         
         return response
     }
-
     
-    //AUTH
+    private func waitForAuthentication() async {
+        while isAuthenticating {
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000) // Sleeps for 0.1 seconds
+            } catch {  }
+        }
+    }
+
+    //AUTH - HERE IS THE ISSUe!
     func refreshOrLoginIfNeeded() {
-        if let refreshToken = refreshToken {
-            refreshAccessToken(refreshToken: refreshToken)
-        } else {
-            anonymousLogin()
+        isAuthenticating = true
+        Task {
+            if let refreshToken = refreshToken {
+                await refreshAccessToken(refreshToken: refreshToken)
+            } else {
+                await anonymousLogin()
+            }
         }
     }
     
-    private func anonymousLogin() {
+    private func anonymousLogin() async {
         let params = ["deviceId": deviceId]
-        Task {
-            do {
-                let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("/swizzle/auth/anonymous"), data: params)
-                accessToken = response.accessToken
-                refreshToken = response.refreshToken
-            } catch {
-                print("Anonymous login failed: \(error)")
-            }
+
+        do {
+            let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("swizzle/auth/anonymous"), data: params)
+            accessToken = response.accessToken
+            refreshToken = response.refreshToken
+            userId = response.userId
+            return
+        } catch {
+            print("Anonymous login failed: \(error)")
+            isAuthenticating = false
+            return
         }
     }
 
-    private func refreshAccessToken(refreshToken: String) {
+    private func refreshAccessToken(refreshToken: String) async {
         let params = ["refreshToken": refreshToken, "deviceId": deviceId]
-        Task {
-            do {
-                let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("/swizzle/auth/refresh"), data: params)
-                self.accessToken = response.accessToken
-                self.refreshToken = response.refreshToken
-            } catch {
-                print("Failed to refresh access token: \(error)")
-                anonymousLogin() // Attempt an anonymous login if token refresh fails
-            }
+        
+        do {
+            let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("swizzle/auth/refresh"), data: params)
+            self.accessToken = response.accessToken
+            self.refreshToken = response.refreshToken
+        } catch {
+            print("Failed to refresh access token: \(error)")
+            return await anonymousLogin() // Attempt an anonymous login if token refresh fails
         }
     }
 }

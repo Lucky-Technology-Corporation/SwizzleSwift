@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwizzleStorage",
+    name: "Swizzle",
     platforms: [
         .macOS(.v10_15),
         .iOS(.v13)
     ],
     products: [
         .library(
-            name: "SwizzleStorage",
-            targets: ["SwizzleStorage"]),
+            name: "Swizzle",
+            targets: ["Swizzle"]),
     ],
     dependencies: [],
     targets: [
         .target(
-            name: "SwizzleStorage",
+            name: "Swizzle",
             dependencies: [ ]),
         .testTarget(
-            name: "SwizzleStorageTests",
-            dependencies: ["SwizzleStorage"]),
+            name: "SwizzleTests",
+            dependencies: ["Swizzle"]),
     ]
 )

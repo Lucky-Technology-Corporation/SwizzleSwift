@@ -1,19 +1,11 @@
-//
-//  File.swift
-//  
-//
-//  Created by Adam Barr-Neuwirth on 7/27/23.
-//
-
 import Foundation
 import Security
 
 extension Swizzle {
     
     func getUniqueDeviceIdentifier() -> String? {
-        let account = "SwizzleDeviceId" // an account attribute to associate the UID with
+        let account = "SwizzleDeviceId"
 
-        //Try to get UID
         let accountData = account.data(using: String.Encoding.utf8)!
         let getQuery: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
                                        kSecAttrAccount as String: accountData,
@@ -29,8 +21,7 @@ extension Swizzle {
                 return uid
             }
         }
-
-        //Save a new UID if we couldn't find one
+        
         let uid: String = UUID().uuidString
         let uidData = uid.data(using: String.Encoding.utf8)!
 
