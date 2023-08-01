@@ -45,6 +45,13 @@ public class Swizzle {
 
     private init() { }
 
+    /**
+    Configures the project ID and the test environment.
+
+    - Parameters:
+      - projectId: The ID of the project to construct the base URL.
+      - test: A Boolean flag that determines whether the API should point to the test environment. The default value is `true`.
+    */
     public func configure(projectId: String, test: Bool = true) {
         var url = "https://\(projectId).swizzle.run"
         if(test){
@@ -153,6 +160,24 @@ public class Swizzle {
     }
     
     #if canImport(UIKit)
+    /**
+    Uploads a given image to a specified endpoint with adjustable quality and size.
+
+    The function first resizes the input image to the specified size (default 200x200) and compresses it with the specified quality (default 0.7). The compressed image is then encoded into a base64 string, which is posted to the endpoint appended to the `apiBaseURL`.
+
+    This function is asynchronous and throws errors for various failure conditions like `Swizzle` not being initialized, bad image data or bad URL response.
+
+    - Parameters:
+      - image: The `UIImage` that you want to upload.
+      - size: The target size to which the image should be resized. The default value is `CGSize(width: 200, height: 200)`.
+      - compressionQuality: The quality of the output JPEG representation of the image, expressed as a value from 0.0 to 1.0. The value 0.0 represents the maximum compression (or lowest quality) while the value 1.0 represents the least compression (or best quality). The default value is 0.7.
+    - Throws: `SwizzleError.swizzleNotInitialized` if Swizzle is not initialized, `SwizzleError.badImage` if there was an issue encoding the image, or `SwizzleError.badURL` if the URL received from the server can't be interpreted correctly.
+    - Returns: The URL where the image was uploaded.
+
+    - Note: This function is only available on platforms where UIKit is available.
+
+    - Precondition: `Swizzle.shared` must be properly initialized and able to post data.
+    */
     public func upload(image: UIImage, size: CGSize = CGSize(width: 200, height: 200), compressionQuality: CGFloat = 0.7) async throws -> URL{
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let imageData = image.resized(to: size)?.jpegData(compressionQuality: compressionQuality)
@@ -299,6 +324,17 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         }
     }
     
+    /**
+    Initializes a new instance with a specified key and an optional default value.
+
+    The initializer tries to load a previously saved value for the key from UserDefaults. If a saved value is found and it can be decoded into the correct type `T`, it is used to initialize `self.value`. Otherwise, `self.value` is initialized with the provided default value. After setting `self.value` from the cache (if available), it fetches the updated value from the database.
+
+    - Parameters:
+      - key: The key to use for this object.
+      - defaultValue: The default value to use if no previously saved value is found, or if the saved value cannot be decoded to the correct type. If no default value is provided, it defaults to `nil`.
+    
+    - Precondition: `Swizzle.shared` must be properly initialized.
+     */
     public init(_ key: String, defaultValue: T? = nil) {
         self.key = key
         self.defaultValue = defaultValue
@@ -312,6 +348,16 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         }
     }
     
+    /**
+    Refreshes the value associated with a specific key and executes a completion handler with the fetched value.
+
+    This function first attempts to load a value from the database asynchronously. If the value is successfully fetched, it is assigned to `self?.value` and then saved back to the on-device cache.
+
+    - Parameters:
+      - completion: An optional closure that takes an optional value of type `T`. This closure is invoked after the value is fetched. If the fetch fails or if the fetched value is `nil`, the closure is called with `nil`.
+
+    - Precondition: `Swizzle.shared` must be properly initialized and able to fetch values.
+    */
     public func refresh(completion: ((T?) -> Void)? = nil) {
         Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
             DispatchQueue.main.async {

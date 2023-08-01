@@ -42,14 +42,14 @@ final class SwizzleStorageTests: XCTestCase {
         XCTAssertEqual(genericObject?.name, "first")
         
         genericObject?.name = "second"
-        
-        try await Task.sleep(nanoseconds: 5 * 1_000_000_000)  // Sleep for 1 second
-        
-        _genericObject.refresh()
-        
-        try await Task.sleep(nanoseconds: 5 * 1_000_000_000)  // Sleep for 1 second
-        
         XCTAssertEqual(genericObject?.name, "second")
+        
+        genericObject?.name = "third"
+        _genericObject.refresh()
+        print("Sleeping while refreshing...")
+        try await Task.sleep(nanoseconds: 2 * 1_000_000_000)
+        print("Checking...")
+        XCTAssertEqual(genericObject?.name, "third")
     }
     
     func testLocalCaching() async throws {
@@ -97,6 +97,12 @@ final class SwizzleStorageTests: XCTestCase {
     func testGetPlaidFunctionCall() async throws {
         Swizzle.shared.configure(projectId: "test", test: true)
         let pong: String = try await Swizzle.shared.get("plaidLinkToken")
+        print(pong)
+    }
+    
+    func testRankFunctionCall() async throws {
+        Swizzle.shared.configure(projectId: "test", test: true)
+        let pong: Int = try await Swizzle.shared.get("rank")
         print(pong)
     }
 
