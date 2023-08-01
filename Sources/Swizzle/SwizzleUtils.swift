@@ -46,6 +46,7 @@ struct SwizzleLoginResponse: Codable {
 enum SwizzleError: LocalizedError {
     case swizzleNotInitialized
     case unauthenticated
+    case badImage
     
     var errorDescription: String? {
         switch self {
@@ -53,6 +54,8 @@ enum SwizzleError: LocalizedError {
             return NSLocalizedString("Swizzle has not been initialized yet. Call Swizzle.shared.configure(projectId: \"YourProjectID\") before making any requests", comment: "Uninitialized")
         case .unauthenticated:
             return NSLocalizedString("This user doesn't have permission to access this resource", comment: "Unauthenticated")
+        case .badImage:
+            return NSLocalizedString("This image is not the right format", comment: "Bad image")
 
         }
     }

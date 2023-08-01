@@ -127,7 +127,7 @@ public class Swizzle {
     public func upload(image: UIImage) async throws -> URL{
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let imageData = image.jpegData(compressionQuality: 0.5)
-        let base64String = imageData?.base64EncodedString()
+        guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/storage")
         Task {
             let response = try await post(queryURL, data: ImageUpload(data: base64String))
