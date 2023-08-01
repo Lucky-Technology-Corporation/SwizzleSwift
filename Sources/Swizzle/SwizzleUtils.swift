@@ -26,10 +26,10 @@ extension Swizzle {
         }
         
         
-        let uid: String = UUID().uuidString
+        var uid: String = UUID().uuidString
         
         #if canImport(UIKit)
-        uid = UIDevice.currentDevice().identifierForVendor!.UUIDString
+        uid = UIDevice.current.identifierForVendor!.UUIDString
         #endif
         
         let uidData = uid.data(using: String.Encoding.utf8)!
