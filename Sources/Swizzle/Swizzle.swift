@@ -86,12 +86,19 @@ public class Swizzle {
     func saveValue<T: Codable>(_ value: T, forKey key: String) {
         guard let apiBaseURL = apiBaseURL else { return }
         
+        do {
+            let data = try JSONEncoder().encode(value)
+            Swizzle.shared.userDefaults.set(data, forKey: key)
+        } catch {
+            print("Failed to save \(key) locally")
+        }
+        
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
             do {
                 try await post(queryURL, data: value)
             } catch {
-                print("Failed to store data for key \(key): \(error)")
+                print("Failed to save \(key) remotely")
             }
         }
     }
@@ -281,6 +288,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     public var wrappedValue: T? {
         get { value }
         set {
+            print("set")
             value = newValue
             if let newValue = newValue {
                 Swizzle.shared.saveValue(newValue, forKey: key)
