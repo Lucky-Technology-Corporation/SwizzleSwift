@@ -53,6 +53,7 @@ public class Swizzle {
             print("[Swizzle] ERROR - your production environment has not been set up!")
             return
         }
+        url = "http://localhost:3000"
         apiBaseURL = URL(string: url)
     }
     
@@ -124,17 +125,14 @@ public class Swizzle {
     
     #if canImport(UIKit)
     public func upload(image: UIImage) async throws -> URL{
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let imageData = image.jpegData(compressionQuality: 0.5)
-        let base64String = imageData.base64EncodedString()
+        let base64String = imageData?.base64EncodedString()
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/storage")
         Task {
-            do {
-                let response = try await post(queryURL, data: ImageUpload(data: base64String))
-                print(response)
-                return URL(string: response)
-            } catch {
-                print("Failed to store data for key \(key): \(error)")
-            }
+            let response = try await post(queryURL, data: ImageUpload(data: base64String))
+            print(response)
+            return URL(string: response)
         }
     }
     #endif
