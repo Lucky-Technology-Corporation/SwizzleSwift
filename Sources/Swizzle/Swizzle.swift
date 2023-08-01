@@ -142,7 +142,7 @@ public class Swizzle {
     }
     
     #if canImport(UIKit)
-    public func upload(image: UIImage, size: CGSize? = CGSize(width: 200, height: 200), compressionQuality: Float? = 0.7) async throws -> URL{
+    public func upload(image: UIImage, size: CGSize = CGSize(width: 200, height: 200), compressionQuality: Float = 0.7) async throws -> URL{
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let imageData = image.resized(to: size).jpegData(compressionQuality: compressionQuality)
         guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
