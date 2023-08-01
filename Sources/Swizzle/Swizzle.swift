@@ -316,6 +316,12 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
+                
+                do {
+                    let data = try JSONEncoder().encode(fetchedValue)
+                    guard let safeSelf = self else { return }
+                    Swizzle.shared.userDefaults.set(data, forKey: safeSelf.key)
+                } catch { }
             }
         }
     }
