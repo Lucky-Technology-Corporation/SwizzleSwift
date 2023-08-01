@@ -25,7 +25,13 @@ extension Swizzle {
             }
         }
         
+        
         let uid: String = UUID().uuidString
+        
+        #if canImport(UIKit)
+        uid = UIDevice.currentDevice().identifierForVendor!.UUIDString
+        #endif
+        
         let uidData = uid.data(using: String.Encoding.utf8)!
 
         let addQuery: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
