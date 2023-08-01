@@ -93,4 +93,5 @@ final class SwizzleStorageTests: XCTestCase {
         let pong: PongStruct = try await Swizzle.shared.post("swizzle/internal/ping", data: PingStruct(message: "pong"))
         XCTAssertEqual(pong.message, "pong")
     }
+
 }

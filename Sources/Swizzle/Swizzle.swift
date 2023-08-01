@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public class Swizzle {
     public static let shared = Swizzle()
@@ -115,6 +118,27 @@ public class Swizzle {
         return try await post(queryURL, data: data)
     }
     
+    struct ImageUpload: Codable {
+        var data: String
+    }
+    
+    #if canImport(UIKit)
+    public func upload(image: UIImage) async throws -> URL{
+        let imageData = image.jpegData(compressionQuality: 0.5)
+        let base64String = imageData.base64EncodedString()
+        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/storage")
+        Task {
+            do {
+                let response = try await post(queryURL, data: ImageUpload(data: base64String))
+                print(response)
+                return URL(string: response)
+            } catch {
+                print("Failed to store data for key \(key): \(error)")
+            }
+        }
+    }
+    #endif
+
     
     //REST APIs
     func get<T: Decodable>(_ url: URL) async throws -> T {
