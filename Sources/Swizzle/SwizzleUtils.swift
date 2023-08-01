@@ -47,6 +47,7 @@ enum SwizzleError: LocalizedError {
     case swizzleNotInitialized
     case unauthenticated
     case badImage
+    case badURL
     
     var errorDescription: String? {
         switch self {
@@ -56,7 +57,8 @@ enum SwizzleError: LocalizedError {
             return NSLocalizedString("This user doesn't have permission to access this resource", comment: "Unauthenticated")
         case .badImage:
             return NSLocalizedString("This image is not the right format", comment: "Bad image")
-
+        case .badURL:
+            return NSLocalizedString("This URL is not correct", comment: "Bad URL")
         }
     }
 }

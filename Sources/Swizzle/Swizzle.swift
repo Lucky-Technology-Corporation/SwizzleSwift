@@ -133,11 +133,12 @@ public class Swizzle {
         let imageData = image.jpegData(compressionQuality: 0.5)
         guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/storage")
-        Task {
-            let response: ImageUploadResult = try await self.post(queryURL, data: ImageUpload(data: base64String))
-            print(response.url)
-            return URL(string: response.url)
+        let response: ImageUploadResult = try await self.post(queryURL, data: ImageUpload(data: base64String))
+        print(response.url)
+        guard let url = URL(string: response.url) else {
+            throw SwizzleError.badURL
         }
+        return url
     }
     #endif
 
