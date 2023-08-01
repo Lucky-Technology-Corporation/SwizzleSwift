@@ -1,5 +1,8 @@
 import Foundation
 import Security
+#if canImport(UIKit)
+import UIKit
+#endif
 
 extension Swizzle {
     
@@ -62,7 +65,7 @@ enum SwizzleError: LocalizedError {
         }
     }
 }
-
+#if canImport(UIKit)
 extension UIImage {
     func resized(to size: CGSize) -> UIImage? {
         UIGraphicsBeginImageContextWithOptions(size, false, self.scale)
@@ -74,3 +77,4 @@ extension UIImage {
         return resizedImage
     }
 }
+#endif
