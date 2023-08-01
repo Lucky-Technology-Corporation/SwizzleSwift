@@ -237,7 +237,6 @@ public class Swizzle {
         }
     }
 
-    //AUTH - HERE IS THE ISSUe!
     func refreshOrLoginIfNeeded() {
         isAuthenticating = true
         Task {
@@ -259,7 +258,7 @@ public class Swizzle {
             userId = response.userId
             return
         } catch {
-            print("Anonymous login failed: \(error)")
+            print("Authentication failed: \(error)")
             isAuthenticating = false
             return
         }
@@ -273,7 +272,6 @@ public class Swizzle {
             self.accessToken = response.accessToken
             self.refreshToken = response.refreshToken
         } catch {
-            print("Failed to refresh access token: \(error)")
             return await anonymousLogin() // Attempt an anonymous login if token refresh fails
         }
     }
@@ -288,12 +286,11 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     public var wrappedValue: T? {
         get { value }
         set {
-            print("set")
             value = newValue
             if let newValue = newValue {
                 Swizzle.shared.saveValue(newValue, forKey: key)
             } else {
-                print("[Swizzle] Can't update a property of a nil object")
+                print("[Swizzle] Can't update a property of a nil object.")
             }
         }
     }
@@ -304,7 +301,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
-            refresh() //refresh after
+            refresh()
         } else {
             self.value = defaultValue
             refresh()
