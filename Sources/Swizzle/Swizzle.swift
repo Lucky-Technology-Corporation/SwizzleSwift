@@ -105,6 +105,21 @@ public class Swizzle {
         return try await get(queryURL)
     }
     
+    public func get(_ functionName: String) async throws -> String {
+        await waitForAuthentication()
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let queryURL = apiBaseURL.appendingPathComponent(functionName)
+        return try await getString(queryURL)
+    }
+    
+    public func get(_ functionName: String) async throws -> Int {
+        await waitForAuthentication()
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let queryURL = apiBaseURL.appendingPathComponent(functionName)
+        return try await getInt(queryURL)
+    }
+
+    
     public func post<T: Encodable>(_ functionName: String, data: T) async throws {
         await waitForAuthentication()
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
@@ -133,6 +148,7 @@ public class Swizzle {
         let imageData = image.jpegData(compressionQuality: 0.5)
         guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/storage")
+        print(base64String)
         let response: ImageUploadResult = try await self.post(queryURL, data: ImageUpload(data: base64String))
         print(response.url)
         guard let url = URL(string: response.url) else {
@@ -152,6 +168,29 @@ public class Swizzle {
         let decoder = JSONDecoder()
         let response = try decoder.decode(T.self, from: data)
         return response
+    }
+    
+    func getString(_ url: URL) async throws -> String {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        let (data, _) = try await URLSession.shared.data(for: request)
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw URLError(.badServerResponse)
+        }
+        return string
+    }
+    
+    func getInt(_ url: URL) async throws -> Int {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        let (data, _) = try await URLSession.shared.data(for: request)
+        guard let string = String(data: data, encoding: .utf8),
+              let int = Int(string) else {
+            throw URLError(.badServerResponse)
+        }
+        return int
     }
 
     func post<T: Encodable>(_ url: URL, data: T) async throws {

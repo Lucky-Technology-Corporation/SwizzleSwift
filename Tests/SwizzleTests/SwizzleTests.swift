@@ -93,5 +93,11 @@ final class SwizzleStorageTests: XCTestCase {
         let pong: PongStruct = try await Swizzle.shared.post("swizzle/internal/ping", data: PingStruct(message: "pong"))
         XCTAssertEqual(pong.message, "pong")
     }
+    
+    func testGetPlaidFunctionCall() async throws {
+        Swizzle.shared.configure(projectId: "test", test: true)
+        let pong: String = try await Swizzle.shared.get("plaidLinkToken")
+        print(pong)
+    }
 
 }
