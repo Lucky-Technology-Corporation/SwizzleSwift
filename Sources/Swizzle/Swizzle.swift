@@ -62,6 +62,8 @@ public class Swizzle {
         
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
+            await waitForAuthentication()
+
             do {
                 let deviceData: T = try await get(queryURL)
                 DispatchQueue.main.async {
@@ -95,6 +97,8 @@ public class Swizzle {
         
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
+            await waitForAuthentication()
+
             do {
                 try await post(queryURL, data: value)
             } catch {
