@@ -53,7 +53,6 @@ public class Swizzle {
             print("[Swizzle] ERROR - your production environment has not been set up!")
             return
         }
-        url = "http://localhost:3000"
         apiBaseURL = URL(string: url)
     }
     
