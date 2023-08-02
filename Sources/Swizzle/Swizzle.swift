@@ -390,7 +390,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
             objectWillChange.send()
         }
     }
-    private let key: String
+    let key: String
     private var defaultValue: T?
     
     public var wrappedValue: T? {
