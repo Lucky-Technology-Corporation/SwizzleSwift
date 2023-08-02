@@ -313,11 +313,7 @@ public class Swizzle {
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
     public let objectWillChange = ObservableObjectPublisher()
-    @Published public var value: T? {
-        willSet {
-            objectWillChange.send()
-        }
-    }
+    @Published private var value: T? 
     let key: String
     var defaultValue: T?
     
