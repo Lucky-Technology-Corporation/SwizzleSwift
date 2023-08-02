@@ -320,6 +320,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         set {
             DispatchQueue.main.async { [weak self] in
                 self?.value = newValue
+                print("Wrapped value updated: \(String(describing: newValue))")
                 self?.objectWillChange.send()
             }
             if let newValue = newValue {
@@ -368,12 +369,12 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
-                
+                self?.objectWillChange.send()
+
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
                     guard let safeSelf = self else { return }
                     Swizzle.shared.userDefaults.set(data, forKey: safeSelf.key)
-                    self?.objectWillChange.send()  // Notify observers of the change
                 } catch { }
             }
         }
