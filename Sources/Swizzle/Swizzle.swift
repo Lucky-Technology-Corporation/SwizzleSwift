@@ -314,7 +314,11 @@ public class Swizzle {
 public class SwizzleStorage<T: Codable>: ObservableObject {
     public let objectWillChange = PassthroughSubject<Void, Never>()
 
-    private var value: T?
+    private var value: T?{
+        didSet{
+            objectWillChange.send()
+        }
+    }
     let key: String
     var defaultValue: T?
     
