@@ -315,7 +315,9 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     public var wrappedValue: T? {
         get { value }
         set {
-            value = newValue
+            DispatchQueue.main.async { [weak self] in
+                self?.value = newValue
+            }
             if let newValue = newValue {
                 Swizzle.shared.saveValue(newValue, forKey: key)
             } else {
@@ -367,6 +369,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
                     let data = try JSONEncoder().encode(fetchedValue)
                     guard let safeSelf = self else { return }
                     Swizzle.shared.userDefaults.set(data, forKey: safeSelf.key)
+                    self?.objectWillChange.send()  // Notify observers of the change
                 } catch { }
             }
         }
