@@ -308,11 +308,30 @@ public class Swizzle {
     }
 }
 
+class ModelStorage<T: Codable>: ObservableObject {
+    @Published var value: T?
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(_ storage: SwizzleStorage<T>) {
+        storage.objectWillChange.sink { [weak self] _ in
+            self?.value = storage.wrappedValue
+        }.store(in: &cancellables)
+    }
+}
 
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
-    @Published var value: T?
+    public let objectWillChange = PassthroughSubject<Void, Never>()
+
+    var value: T? {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                self?.objectWillChange.send()
+            }
+        }
+    }
     let key: String
     var defaultValue: T?
     
