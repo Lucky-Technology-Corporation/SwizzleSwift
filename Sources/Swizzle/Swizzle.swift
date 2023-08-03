@@ -338,6 +338,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         set {
             DispatchQueue.main.async { [weak self] in
                 self?.value = newValue
+                print("set \(newValue)")
             }
             if let newValue = newValue {
                 Swizzle.shared.saveValue(newValue, forKey: key)
@@ -356,6 +357,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
                 self?.value = fetchedValue
                 self?.objectWillChange.send()
                 do {
+                    print("refreshed \(fetchedValue)")
                     let data = try JSONEncoder().encode(fetchedValue)
                     Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
                 } catch { }
@@ -363,12 +365,12 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         }
     }
     
-    public func refreshFromCache(){
-        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
-            self.value = loadedValue
-            self.objectWillChange.send()
-        }
-    }
+//    public func refreshFromCache(){
+//        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
+//            self.value = loadedValue
+//            self.objectWillChange.send()
+//        }
+//    }
     
 }
 
