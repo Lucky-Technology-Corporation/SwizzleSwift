@@ -385,12 +385,12 @@ public class SwizzleModel<T: Codable>: ObservableObject {
             }
             .store(in: &cancellables)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(updateValue), name: .swizzleStorageUpdated, object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(updateValue), name: .swizzleStorageUpdated, object: nil)
     }
     
-    @objc func updateValue(){
-        _object.refreshFromCache()
-    }
+//    @objc func updateValue(){
+//        _object.refreshFromCache()
+//    }
     
     public func refresh(){
         _object.refresh()
