@@ -414,6 +414,6 @@ public class SwizzleModel<T: Codable>: ObservableObject {
 }
 
 extension Notification.Name {
-    static let swizzleModelUpdated = Notification.Name("swizzleStorageUpdated")
+    static let swizzleModelUpdated = Notification.Name("swizzleModelUpdated")
     static let swizzleStorageUpdated = Notification.Name("swizzleStorageUpdated")
 }
