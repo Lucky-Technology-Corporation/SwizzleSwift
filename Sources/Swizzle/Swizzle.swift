@@ -100,7 +100,6 @@ public class Swizzle {
         do {
             let data = try JSONEncoder().encode(value)
             Swizzle.shared.userDefaults.set(data, forKey: key)
-            NotificationCenter.default.post(name: .swizzleStorageUpdated, object: nil)
         } catch {
             print("[Swizzle] Failed to save \(key) locally")
         }
@@ -333,6 +332,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
             self.objectWillChange.send()
             refresh()
         }
+        
         observer = NotificationCenter.default.addObserver(forName: .swizzleModelUpdated, object: nil, queue: nil) { [weak self] _ in
             self?.refreshFromCache()
         }
@@ -352,6 +352,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
             }
             if let newValue = newValue {
                 Swizzle.shared.saveValue(newValue, forKey: key)
+                NotificationCenter.default.post(name: .swizzleStorageUpdated, object: nil)
             } else {
                 print("[Swizzle] Can't update a property of a nil object.")
             }
