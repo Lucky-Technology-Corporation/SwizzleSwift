@@ -308,7 +308,7 @@ public class Swizzle {
     }
 }
 
-class ModelStorage<T: Codable>: ObservableObject {
+public class ModelStorage<T: Codable>: ObservableObject {
     @Published var value: T?
     
     private var cancellables = Set<AnyCancellable>()
