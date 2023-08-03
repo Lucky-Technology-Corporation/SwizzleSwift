@@ -323,7 +323,7 @@ public class ModelStorage<T: Codable>: ObservableObject {
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
-    public let objectWillChange = ObservableObjectPublisher()
+    public let objectWillChange = PassthroughSubject<Void, Never>()
     @Published var value: T? {
         willSet {
             DispatchQueue.main.async {
@@ -332,7 +332,8 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         }
     }
     let key: String
-    
+    var defaultValue: T?
+
     public init(_ key: String) {
         self.key = key
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
@@ -342,8 +343,18 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     
     public var wrappedValue: T? {
         get { value }
-        set { value = newValue }
+        set {
+            DispatchQueue.main.async { [weak self] in
+                self?.value = newValue
+            }
+            if let newValue = newValue {
+                Swizzle.shared.saveValue(newValue, forKey: key)
+            } else {
+                print("[Swizzle] Can't update a property of a nil object.")
+            }
+        }
     }
+
     
     public var projectedValue: SwizzleStorage { self }
     
@@ -351,6 +362,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         Swizzle.shared.loadValue(forKey: key, defaultValue: nil) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
+                self?.objectWillChange.send()
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
                     Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
@@ -358,4 +370,5 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
             }
         }
     }
+    
 }
