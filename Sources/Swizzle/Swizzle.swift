@@ -335,11 +335,12 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     let key: String
     var defaultValue: T?
 
-    public init(_ key: String) {
+    public init(_ key: String, defaultValue: T? = nil) {
         self.key = key
+        self.defaultValue = defaultValue
+
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
-//            print("UD load \(loadedValue)")
             self.objectWillChange.send()
             refresh()
         }
@@ -363,10 +364,9 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     public var projectedValue: SwizzleStorage { self }
     
     public func refresh() {
-        Swizzle.shared.loadValue(forKey: key, defaultValue: nil) { [weak self] fetchedValue in
+        Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
-//                print("remote load \(fetchedValue)")
                 self?.objectWillChange.send()
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
@@ -376,4 +376,19 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         }
     }
     
+}
+
+class SwizzleModel<T: Codable>: ObservableObject {
+    @SwizzleStorage("") var object: T?
+
+    private var cancellables = Set<AnyCancellable>()
+
+    init(_ key: String, defaultValue: T?) {
+        _object = SwizzleStorage(key, defaultValue: defaultValue)
+        _object.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
 }
