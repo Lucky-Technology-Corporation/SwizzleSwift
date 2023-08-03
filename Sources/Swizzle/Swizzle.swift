@@ -323,80 +323,41 @@ public class ModelStorage<T: Codable>: ObservableObject {
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
-    public let objectWillChange = PassthroughSubject<Void, Never>()
-
-    var value: T? {
+    @Published var value: T? {
         didSet {
-            DispatchQueue.main.async { [weak self] in
-                self?.objectWillChange.send()
+            DispatchQueue.main.async {
+                print("Value updated: \(String(describing: self.value))")
+                if let newValue = self.value {
+                    Swizzle.shared.saveValue(newValue, forKey: self.key)
+                }
             }
         }
     }
     let key: String
-    var defaultValue: T?
+    
+    public init(_ key: String) {
+        self.key = key
+        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
+            self.value = loadedValue
+        }
+    }
     
     public var wrappedValue: T? {
         get { value }
-        set {
-            DispatchQueue.main.async { [weak self] in
-                self?.value = newValue
-                print("Wrapped value updated: \(String(describing: newValue))")
-            }
-            if let newValue = newValue {
-                Swizzle.shared.saveValue(newValue, forKey: key)
-            } else {
-                print("[Swizzle] Can't update a property of a nil object.")
-            }
-        }
+        set { value = newValue }
     }
     
-    /**
-    Initializes a new instance with a specified key and an optional default value.
-
-    The initializer tries to load a previously saved value for the key from UserDefaults. If a saved value is found and it can be decoded into the correct type `T`, it is used to initialize `self.value`. Otherwise, `self.value` is initialized with the provided default value. After setting `self.value` from the cache (if available), it fetches the updated value from the database.
-
-    - Parameters:
-      - key: The key to use for this object.
-      - defaultValue: The default value to use if no previously saved value is found, or if the saved value cannot be decoded to the correct type. If no default value is provided, it defaults to `nil`.
+    public var projectedValue: SwizzleStorage { self }
     
-    - Precondition: `Swizzle.shared` must be properly initialized.
-     */
-    public init(_ key: String, defaultValue: T? = nil) {
-        self.key = key
-        self.defaultValue = defaultValue
-        
-        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
-            self.value = loadedValue
-            refresh()
-        } else {
-            self.value = defaultValue
-            refresh()
-        }
-    }
-    
-    /**
-    Refreshes the value associated with a specific key and executes a completion handler with the fetched value.
-
-    This function first attempts to load a value from the database asynchronously. If the value is successfully fetched, it is assigned to `self?.value` and then saved back to the on-device cache.
-
-    - Parameters:
-      - completion: An optional closure that takes an optional value of type `T`. This closure is invoked after the value is fetched. If the fetch fails or if the fetched value is `nil`, the closure is called with `nil`.
-
-    - Precondition: `Swizzle.shared` must be properly initialized and able to fetch values.
-    */
-    public func refresh(completion: ((T?) -> Void)? = nil) {
-        Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
+    public func refresh() {
+        Swizzle.shared.loadValue(forKey: key, defaultValue: nil) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
-                self?.objectWillChange.send()
-
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
-                    guard let safeSelf = self else { return }
-                    Swizzle.shared.userDefaults.set(data, forKey: safeSelf.key)
+                    Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
                 } catch { }
             }
         }
     }
 }
-
