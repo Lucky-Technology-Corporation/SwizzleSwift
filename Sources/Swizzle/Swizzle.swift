@@ -323,13 +323,11 @@ public class ModelStorage<T: Codable>: ObservableObject {
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
+    public let objectWillChange = ObservableObjectPublisher()
     @Published var value: T? {
-        didSet {
+        willSet {
             DispatchQueue.main.async {
-                print("Value updated: \(String(describing: self.value))")
-                if let newValue = self.value {
-                    Swizzle.shared.saveValue(newValue, forKey: self.key)
-                }
+                self.objectWillChange.send()
             }
         }
     }
