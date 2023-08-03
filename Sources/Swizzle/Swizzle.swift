@@ -371,7 +371,7 @@ public class SwizzleModel<T: Codable>: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(_ key: String, defaultValue: T?) {
+    public init(_ key: String, defaultValue: T? = nil) {
         _object = SwizzleStorage(key, defaultValue: defaultValue)
         _object.objectWillChange
             .sink { [weak self] _ in
