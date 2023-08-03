@@ -367,7 +367,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 }
 
 public class SwizzleModel<T: Codable>: ObservableObject {
-    @SwizzleStorage("") var object: T?
+    @SwizzleStorage("") public var object: T?
 
     private var cancellables = Set<AnyCancellable>()
 
