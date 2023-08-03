@@ -379,4 +379,8 @@ public class SwizzleModel<T: Codable>: ObservableObject {
             }
             .store(in: &cancellables)
     }
+    
+    public func refresh(){
+        _object.refresh()
+    }
 }
