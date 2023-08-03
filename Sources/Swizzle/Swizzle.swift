@@ -85,7 +85,7 @@ public class Swizzle {
                         completion(defaultValue)
                     }
                 } else {
-                    print("Failed to fetch data for key \(key): \(error)")
+                    print("[Swizzle] Failed to fetch data for key \(key): \(error)")
                     DispatchQueue.main.async {
                         completion(defaultValue)
                     }
@@ -100,9 +100,9 @@ public class Swizzle {
         do {
             let data = try JSONEncoder().encode(value)
             Swizzle.shared.userDefaults.set(data, forKey: key)
-            print("UD saved \(value)")
+//            print("UD saved \(value)")
         } catch {
-            print("Failed to save \(key) locally")
+            print("[Swizzle] Failed to save \(key) locally")
         }
         
         let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
@@ -112,7 +112,7 @@ public class Swizzle {
             do {
                 try await post(queryURL, data: value)
             } catch {
-                print("Failed to save \(key) remotely")
+                print("[Swizzle] Failed to save \(key) remotely")
             }
         }
     }
@@ -290,7 +290,7 @@ public class Swizzle {
             userId = response.userId
             return
         } catch {
-            print("Authentication failed: \(error)")
+            print("[Swizzle] Authentication failed: \(error)")
             isAuthenticating = false
             return
         }
@@ -339,7 +339,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         self.key = key
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
-            print("UD load \(loadedValue)")
+//            print("UD load \(loadedValue)")
             self.objectWillChange.send()
             refresh()
         }
@@ -366,7 +366,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         Swizzle.shared.loadValue(forKey: key, defaultValue: nil) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
-                print("remote load \(fetchedValue)")
+//                print("remote load \(fetchedValue)")
                 self?.objectWillChange.send()
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
