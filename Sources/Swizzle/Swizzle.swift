@@ -100,7 +100,6 @@ public class Swizzle {
         do {
             let data = try JSONEncoder().encode(value)
             Swizzle.shared.userDefaults.set(data, forKey: key)
-            NotificationCenter.default.post(name: .swizzleStorageUpdated, object: nil)
         } catch {
             print("[Swizzle] Failed to save \(key) locally")
         }
