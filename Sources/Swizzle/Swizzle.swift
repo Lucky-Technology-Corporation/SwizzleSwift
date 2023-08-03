@@ -338,6 +338,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         self.key = key
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
+            refresh()
         }
     }
     
