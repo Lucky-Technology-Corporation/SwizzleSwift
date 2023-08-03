@@ -309,18 +309,6 @@ public class Swizzle {
     }
 }
 
-public class ModelStorage<T: Codable>: ObservableObject {
-    @Published var value: T?
-    
-    private var cancellables = Set<AnyCancellable>()
-    
-    public init(_ storage: SwizzleStorage<T>) {
-        storage.objectWillChange.sink { [weak self] _ in
-            self?.value = storage.wrappedValue
-        }.store(in: &cancellables)
-    }
-}
-
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
