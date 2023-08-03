@@ -312,6 +312,7 @@ public class Swizzle {
 
 @propertyWrapper
 public class SwizzleStorage<T: Codable>: ObservableObject {
+    private var observer: NSObjectProtocol?
     public let objectWillChange = PassthroughSubject<Void, Never>()
     @Published var value: T? {
         willSet {
@@ -331,6 +332,15 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
             self.value = loadedValue
             self.objectWillChange.send()
             refresh()
+        }
+        observer = NotificationCenter.default.addObserver(forName: .swizzleModelUpdated, object: nil, queue: nil) { [weak self] _ in
+            self?.refreshFromCache()
+        }
+    }
+    
+    deinit {
+        if let observer = observer {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
     
@@ -374,7 +384,11 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 }
 
 public class SwizzleModel<T: Codable>: ObservableObject {
-    @SwizzleStorage("") public var object: T?
+    @SwizzleStorage("") public var object: T? {
+        didSet{
+            NotificationCenter.default.post(name: .swizzleModelUpdated, object: nil)
+        }
+    }
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -399,5 +413,6 @@ public class SwizzleModel<T: Codable>: ObservableObject {
 }
 
 extension Notification.Name {
+    static let swizzleModelUpdated = Notification.Name("swizzleStorageUpdated")
     static let swizzleStorageUpdated = Notification.Name("swizzleStorageUpdated")
 }
