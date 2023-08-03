@@ -100,6 +100,7 @@ public class Swizzle {
         do {
             let data = try JSONEncoder().encode(value)
             Swizzle.shared.userDefaults.set(data, forKey: key)
+            print("UD saved \(value)")
         } catch {
             print("Failed to save \(key) locally")
         }
@@ -338,6 +339,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         self.key = key
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
+            print("UD load \(loadedValue)")
             self.objectWillChange.send()
             refresh()
         }
@@ -364,6 +366,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         Swizzle.shared.loadValue(forKey: key, defaultValue: nil) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 self?.value = fetchedValue
+                print("remote load \(fetchedValue)")
                 self?.objectWillChange.send()
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
