@@ -48,7 +48,7 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
 
     public var projectedValue: SwizzleEndpoint { self }
     
-    private func refresh() {
+    public func refresh() {
         Task {
             do {
                 let fetchedValue: T = try await Swizzle.shared.get(endpoint)
