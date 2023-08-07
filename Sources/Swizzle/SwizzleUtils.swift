@@ -57,6 +57,7 @@ enum SwizzleError: LocalizedError {
     case unauthenticated
     case badImage
     case badURL
+    case badFormat
     
     var errorDescription: String? {
         switch self {
@@ -65,9 +66,11 @@ enum SwizzleError: LocalizedError {
         case .unauthenticated:
             return NSLocalizedString("This user doesn't have permission to access this resource", comment: "Unauthenticated")
         case .badImage:
-            return NSLocalizedString("This image is not the right format", comment: "Bad image")
+            return NSLocalizedString("This image is not the right format", comment: "Incorrect image format")
         case .badURL:
-            return NSLocalizedString("This URL is not correct", comment: "Bad URL")
+            return NSLocalizedString("This URL is not correct", comment: "Incorrect URL format")
+        case .badFormat:
+            return NSLocalizedString("The input is not in the right format", comment: "Incorrect format")
         }
     }
 }
@@ -98,3 +101,17 @@ extension UIImage {
     }
 }
 #endif
+
+extension String{
+    func isISOPhoneNumberFormat() -> Bool {
+        let pattern = "^\\+[0-9]{11,15}$"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        return regex?.firstMatch(in: self, options: [], range: NSRange(location: 0, length: self.count)) != nil
+    }
+}
+
+
+extension Notification.Name {
+    static let swizzleModelUpdated = Notification.Name("swizzleModelUpdated")
+    static let swizzleStorageUpdated = Notification.Name("swizzleStorageUpdated")
+}

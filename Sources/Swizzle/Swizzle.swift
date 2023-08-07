@@ -137,7 +137,6 @@ public class Swizzle {
         let queryURL = apiBaseURL.appendingPathComponent(functionName)
         return try await getInt(queryURL)
     }
-
     
     public func post<T: Encodable>(_ functionName: String, data: T) async throws {
         await waitForAuthentication()
@@ -268,7 +267,7 @@ public class Swizzle {
         }
     }
 
-    func refreshOrLoginIfNeeded() {
+    private func refreshOrLoginIfNeeded() {
         isAuthenticating = true
         Task {
             if let refreshToken = refreshToken {
@@ -277,6 +276,44 @@ public class Swizzle {
                 await anonymousLogin()
             }
         }
+    }
+    
+    public func sendCode(to: String) async throws{
+        if(!to.isISOPhoneNumberFormat()){
+            print("[Swizzle] The phone number is not in ISO format")
+            throw SwizzleError.badFormat
+        }
+        
+        let params = ["phoneNumber": to]
+
+        do {
+            try await post(apiBaseURL!.appendingPathComponent("swizzle/auth/sms/request-code"), data: params)
+            return
+        } catch {
+            print("[Swizzle] Couldn't send SMS code: \(error)")
+            return
+        }
+    }
+    
+    public func verifyCode(_ code: String) async throws -> Bool{
+        if(code.count != 6){
+            print("[Swizzle] The verification code must be 6 digits")
+            throw SwizzleError.badFormat
+        }
+        
+        let params = ["code": code]
+
+        do {
+            let response: SwizzleLoginResponse = try await post(apiBaseURL!.appendingPathComponent("swizzle/auth/verify-code"), data: params)
+            accessToken = response.accessToken
+            refreshToken = response.refreshToken
+            userId = response.userId
+            return true
+        } catch {
+            print("[Swizzle] Couldn't sign in \(error). You need to send a new code with sendCode(to: phoneNumber) to retry.")
+            return false
+        }
+
     }
     
     private func anonymousLogin() async {
@@ -309,111 +346,5 @@ public class Swizzle {
 }
 
 
-@propertyWrapper
-public class SwizzleStorage<T: Codable>: ObservableObject {
-    private var observer: NSObjectProtocol?
-    public let objectWillChange = PassthroughSubject<Void, Never>()
-    @Published var value: T? {
-        willSet {
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
-            }
-        }
-    }
-    let key: String
-    var defaultValue: T?
 
-    public init(_ key: String, defaultValue: T? = nil) {
-        self.key = key
-        self.defaultValue = defaultValue
 
-        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
-            self.value = loadedValue
-            self.objectWillChange.send()
-            refresh()
-        }
-        
-        observer = NotificationCenter.default.addObserver(forName: .swizzleModelUpdated, object: nil, queue: nil) { [weak self] _ in
-            self?.refreshFromCache()
-        }
-    }
-    
-    deinit {
-        if let observer = observer {
-            NotificationCenter.default.removeObserver(observer)
-        }
-    }
-    
-    public var wrappedValue: T? {
-        get { value }
-        set {
-            DispatchQueue.main.async { [weak self] in
-                self?.value = newValue
-            }
-            if let newValue = newValue {
-                Swizzle.shared.saveValue(newValue, forKey: key)
-                NotificationCenter.default.post(name: .swizzleStorageUpdated, object: nil)
-            } else {
-                print("[Swizzle] Can't update a property of a nil object.")
-            }
-        }
-    }
-
-    
-    public var projectedValue: SwizzleStorage { self }
-    
-    public func refresh() {
-        Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
-            DispatchQueue.main.async {
-                self?.value = fetchedValue
-                self?.objectWillChange.send()
-                do {
-                    let data = try JSONEncoder().encode(fetchedValue)
-                    Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
-                } catch { }
-            }
-        }
-    }
-    
-    public func refreshFromCache(){
-        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
-            self.value = loadedValue
-            self.objectWillChange.send()
-        }
-    }
-    
-}
-
-public class SwizzleModel<T: Codable>: ObservableObject {
-    @SwizzleStorage("") public var object: T? {
-        didSet{
-            NotificationCenter.default.post(name: .swizzleModelUpdated, object: nil)
-        }
-    }
-
-    private var cancellables = Set<AnyCancellable>()
-
-    public init(_ key: String, defaultValue: T? = nil) {
-        _object = SwizzleStorage(key, defaultValue: defaultValue)
-        _object.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(updateValue), name: .swizzleStorageUpdated, object: nil)
-    }
-    
-    @objc func updateValue(){
-        _object.refreshFromCache()
-    }
-    
-    public func refresh(){
-        _object.refresh()
-    }
-}
-
-extension Notification.Name {
-    static let swizzleModelUpdated = Notification.Name("swizzleModelUpdated")
-    static let swizzleStorageUpdated = Notification.Name("swizzleStorageUpdated")
-}
