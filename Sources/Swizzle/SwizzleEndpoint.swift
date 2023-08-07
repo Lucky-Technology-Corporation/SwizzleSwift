@@ -29,7 +29,9 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
         self.defaultValue = defaultValue
         self.outerObjectWillChange = outer
         self.cancellable = self.objectWillChange.sink { [weak self] in
-            self?.outerObjectWillChange.send()
+            DispatchQueue.main.async {
+                self?.outerObjectWillChange.send()
+            }
         }
 
         if let data = Swizzle.shared.userDefaults.data(forKey: endpoint), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
@@ -102,7 +104,6 @@ public class BasicSwizzleEndpoint<T: Codable>: ObservableObject {
     
     public var wrappedValue: T? {
         get {
-            refresh()  // Refresh the value from the endpoint whenever it's accessed
             return value
         }
     }
