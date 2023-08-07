@@ -41,7 +41,6 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
     
     public var wrappedValue: T? {
         get {
-            refresh()
             return value
         }
     }
