@@ -67,14 +67,11 @@ public class Swizzle {
     
     //Load and save to DB
     func loadValue<T: Codable>(forKey key: String, defaultValue: T?, completion: @escaping (T?) -> Void) {
-        guard let apiBaseURL = apiBaseURL else { return }
-        
-        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
             await waitForAuthentication()
 
             do {
-                let deviceData: T = try await get(queryURL)
+                let deviceData: T = try await get("/swizzle/db/\(key)/")
                 DispatchQueue.main.async {
                     completion(deviceData)
                 }
@@ -119,23 +116,17 @@ public class Swizzle {
     //Easy function call helpers
     public func get<T: Decodable>(_ functionName: String) async throws -> T {
         await waitForAuthentication()
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let queryURL = apiBaseURL.appendingPathComponent(functionName)
-        return try await get(queryURL)
+        return try await getCodable(functionName)
     }
     
     public func get(_ functionName: String) async throws -> String {
         await waitForAuthentication()
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let queryURL = apiBaseURL.appendingPathComponent(functionName)
-        return try await getString(queryURL)
+        return try await getString(functionName)
     }
     
     public func get(_ functionName: String) async throws -> Int {
         await waitForAuthentication()
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let queryURL = apiBaseURL.appendingPathComponent(functionName)
-        return try await getInt(queryURL)
+        return try await getInt(functionName)
     }
     
     public func post<T: Encodable>(_ functionName: String, data: T) async throws {
@@ -194,7 +185,20 @@ public class Swizzle {
 
     
     //REST APIs
-    func get<T: Decodable>(_ url: URL) async throws -> T {
+    func getData(_ functionName: String) async throws -> Data {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let url = apiBaseURL.appendingPathComponent(functionName)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        return data
+    }
+    
+    func getCodable<T: Decodable>(_ functionName: String) async throws -> T {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let url = apiBaseURL.appendingPathComponent(functionName)
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
@@ -204,7 +208,10 @@ public class Swizzle {
         return response
     }
     
-    func getString(_ url: URL) async throws -> String {
+    func getString(_ functionName: String) async throws -> String {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let url = apiBaseURL.appendingPathComponent(functionName)
+        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
@@ -215,7 +222,10 @@ public class Swizzle {
         return string
     }
     
-    func getInt(_ url: URL) async throws -> Int {
+    func getInt(_ functionName: String) async throws -> Int {
+        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
+        let url = apiBaseURL.appendingPathComponent(functionName)
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
