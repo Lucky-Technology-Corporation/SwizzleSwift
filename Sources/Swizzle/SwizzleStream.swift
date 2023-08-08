@@ -12,11 +12,13 @@ class SwizzleStream{
     @Published var transcript: String = ""
     private var speechRecognizer = SpeechRecognizer()
 
-    func startSpeechRecognition() {
+    public func startSpeechRecognition() {
         Task {
             await speechRecognizer.startTranscribing()
         }
     }
+    
+    init(){ }
 
 }
 #endif
