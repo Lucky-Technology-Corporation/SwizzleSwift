@@ -79,7 +79,7 @@ actor SpeechRecognizer: ObservableObject {
         }
     }
     
-    func getTranscript() -> String {
+    @MainActor func getTranscript() -> String {
         return transcript
     }
     
