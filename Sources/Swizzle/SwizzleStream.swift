@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import AVFoundation
+import Speech
 
 #if canImport(UIKit)
 class SwizzleStream{
@@ -18,7 +20,7 @@ class SwizzleStream{
         }
     }
     
-    init(){ }
+    public init(){ }
 
 }
 #endif
