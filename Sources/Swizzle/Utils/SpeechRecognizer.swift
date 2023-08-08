@@ -97,6 +97,7 @@ actor SpeechRecognizer: ObservableObject {
             self.audioEngine = audioEngine
             self.request = request
             self.task = recognizer.recognitionTask(with: request, resultHandler: { [weak self] result, error in
+                print("Inside recognitionTask handler.")
                 self?.recognitionHandler(audioEngine: audioEngine, result: result, error: error)
             })
         } catch {
@@ -127,6 +128,7 @@ actor SpeechRecognizer: ObservableObject {
         
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
+            print("Appending buffer.")
             request.append(buffer)
         }
         audioEngine.prepare()
