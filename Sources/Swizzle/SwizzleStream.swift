@@ -20,6 +20,15 @@ public class SwizzleStream{
         }
     }
     
+    public func stopSpeechRecognition() -> String{
+        let transcript = speechRecognizer.transcript
+        Task {
+            await speechRecognizer.stopTranscribing()
+            await speechRecognizer.resetTranscript()
+        }
+        return transcript
+    }
+    
     public init(){ }
 
 }
