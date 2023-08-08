@@ -36,9 +36,10 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
 
         if let data = Swizzle.shared.userDefaults.data(forKey: endpoint), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
-            self.objectWillChange.send()
-            refresh()
         }
+        
+        self.objectWillChange.send()
+        refresh()
     }
     
     public var wrappedValue: T? {

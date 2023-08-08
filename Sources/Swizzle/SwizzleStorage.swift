@@ -37,8 +37,6 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
-            self.objectWillChange.send()
-            refresh()
         }
 
         self.cancellable = self.objectWillChange.sink { [weak self] in
@@ -46,6 +44,9 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
                 self?.outerObjectWillChange.send()
             }
         }
+        
+        self.objectWillChange.send()
+        refresh()
     }
     
     deinit {
