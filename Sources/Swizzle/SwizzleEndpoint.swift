@@ -9,11 +9,12 @@ import Foundation
 import Combine
 
 @propertyWrapper
-public class SwizzleEndpoint<T: Codable>: ObservableObject {
+public class SwizzleEndpoint<T: Codable>: ObservableObject, Swizzleable {
     public let objectWillChange = PassthroughSubject<Void, Never>()
     private weak var parentPublisher: ObservableObjectPublisher?
-
-    private var innerValue: T? {
+    private var cancellable: AnyCancellable?
+    
+    @Published private(set) var value: T? {
         willSet {
             DispatchQueue.main.async {
                 self.objectWillChange.send()
@@ -21,58 +22,65 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
             }
         }
     }
+    let endpoint: String
+    var defaultValue: T?
 
-    public var wrappedValue: T? {
-        get { innerValue }
-        set {
-            innerValue = newValue
-            if let newValue = newValue {
-                var valueToSend: Codable
-                if !(newValue is [String: Any]) {
-                    valueToSend = ["value": newValue]
-                } else {
-                    valueToSend = newValue
-                }
-
-                Swizzle.shared.saveValue(valueToSend, forKey: key)
-            } else {
-                print("[Swizzle] Can't update a property of a nil object.")
+    public init(_ endpoint: String, defaultValue: T? = nil) {
+        self.endpoint = endpoint
+        self.defaultValue = defaultValue
+        
+        self.cancellable = self.objectWillChange.sink { [weak self] in
+            DispatchQueue.main.async {
+                self?.parentPublisher?.send()
             }
+        }
+
+        if let data = Swizzle.shared.userDefaults.data(forKey: endpoint), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
+            self.value = loadedValue
+        }
+        
+        self.objectWillChange.send()
+        refresh()
+    }
+    
+    public var wrappedValue: T? {
+        get {
+            return value
         }
     }
 
     public var projectedValue: SwizzleEndpoint { self }
-
-    let key: String
-    var defaultValue: T?
-
-    public init(_ key: String, defaultValue: T? = nil) {
-        self.key = key
-        self.defaultValue = defaultValue
-        
-        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
-            self.innerValue = loadedValue
-        }
-        
-        refresh()
-    }
     
     public func bindPublisher(_ publisher: ObservableObjectPublisher) {
         parentPublisher = publisher
     }
     
     public func refresh() {
-        Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
-            DispatchQueue.main.async {
-                if let dict = fetchedValue as? [String: Codable], dict.count == 1, let value = dict["value"] as? T {
-                    self?.innerValue = value
+        Task {
+            do {
+                let fetchedValue: T
+                if T.self == String.self {
+                    fetchedValue = try await Swizzle.shared.getString(endpoint) as! T
+                } else if T.self == Int.self {
+                    fetchedValue = try await Swizzle.shared.getInt(endpoint) as! T
+                } else if T.self == Bool.self {
+                    fetchedValue = try await Swizzle.shared.getBool(endpoint) as! T
+                } else if T.self == Double.self {
+                    fetchedValue = try await Swizzle.shared.getDouble(endpoint) as! T
                 } else {
-                    self?.innerValue = fetchedValue
+                    let data = try await Swizzle.shared.getData(endpoint)
+                    fetchedValue = try JSONDecoder().decode(T.self, from: data)
                 }
-                do {
-                    let data = try JSONEncoder().encode(fetchedValue)
-                    Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
-                } catch { }
+
+                DispatchQueue.main.async {
+                    self.value = fetchedValue
+                    do {
+                        let data = try JSONEncoder().encode(fetchedValue)
+                        Swizzle.shared.userDefaults.set(data, forKey: self.endpoint)
+                    } catch { }
+                }
+            } catch {
+                print("[Swizzle] Failed to fetch data from endpoint \(endpoint): \(error)")
             }
         }
     }
