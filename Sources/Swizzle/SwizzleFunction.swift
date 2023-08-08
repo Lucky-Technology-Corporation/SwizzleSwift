@@ -26,7 +26,12 @@ public class SwizzleFunction<T: Codable>: ObservableObject, Swizzleable {
     var defaultValue: T?
 
     public init(_ endpoint: String, defaultValue: T? = nil) {
-        self.endpoint = endpoint
+        if endpoint.hasPrefix("/") {
+            self.endpoint = String(endpoint.dropFirst())
+        } else {
+            self.endpoint = endpoint
+        }
+        
         self.defaultValue = defaultValue
         
         self.cancellable = self.objectWillChange.sink { [weak self] in
