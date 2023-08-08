@@ -10,7 +10,7 @@ import AVFoundation
 import Speech
 
 #if canImport(UIKit)
-class SwizzleStream{
+public class SwizzleStream{
     @Published var transcript: String = ""
     private var speechRecognizer = SpeechRecognizer()
 
