@@ -91,3 +91,64 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         }
     }
 }
+
+
+@propertyWrapper
+public class SwizzleStoragePublished<T: Codable>: ObservableObject {
+    private var cancellable: AnyCancellable?
+    @Published public var value: T? {
+        didSet {
+            if let newValue = value {
+                var valueToSend: Codable
+                if !(newValue is [String: Any]) {
+                    valueToSend = ["value": newValue]
+                } else {
+                    valueToSend = newValue
+                }
+                Swizzle.shared.saveValue(valueToSend, forKey: key)
+            } else {
+                print("[Swizzle] Can't update a property of a nil object.")
+            }
+        }
+    }
+    let key: String
+    var defaultValue: T?
+
+    public init(_ key: String, defaultValue: T? = nil) {
+        self.key = key
+        self.defaultValue = defaultValue
+
+        if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
+            self.value = loadedValue
+        }
+        refresh()
+    }
+    
+    deinit {
+        cancellable?.cancel()
+    }
+    
+    public var wrappedValue: T? {
+        get { value }
+        set { value = newValue }
+    }
+    
+    public var projectedValue: SwizzleStoragePublished { self }
+    
+    public func refresh() {
+        Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
+            DispatchQueue.main.async {
+                if let dict = fetchedValue as? [String: Codable], dict.count == 1, let value = dict["value"] as? T {
+                    self?.value = value
+                } else{
+                    self?.value = fetchedValue
+                }
+                do {
+                    let data = try JSONEncoder().encode(fetchedValue)
+                    Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
+                } catch { }
+            }
+        }
+    }
+}
+
