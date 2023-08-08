@@ -21,7 +21,7 @@ public class SwizzleStream{
     }
     
     public func stopSpeechRecognition() -> String{
-        let transcript = speechRecognizer.transcript
+        let transcript = speechRecognizer.getTranscript()
         Task {
             await speechRecognizer.stopTranscribing()
             await speechRecognizer.resetTranscript()
