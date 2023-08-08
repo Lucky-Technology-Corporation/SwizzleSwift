@@ -130,32 +130,32 @@ actor SpeechRecognizer: ObservableObject {
     nonisolated private func recognitionHandler(audioEngine: AVAudioEngine, result: SFSpeechRecognitionResult?, error: Error?) {
         let receivedFinalResult = result?.isFinal ?? false
         let receivedError = error != nil
-        
-        Task { @MainActor in
+
+        Task {
             // Check the time difference
             let currentTime = Date()
-            if let lastUpdateTime = self.lastUpdateTime, currentTime.timeIntervalSince(lastUpdateTime) > 2, !receivedFinalResult {
+            if let lastUpdateTime = await self.lastUpdateTime, currentTime.timeIntervalSince(lastUpdateTime) > 2, !receivedFinalResult {
                 // More than 2 seconds have passed since the last update and the result is not final
                 // This means the user has paused speaking
                 audioEngine.stop()
                 audioEngine.inputNode.removeTap(onBus: 0)
-                self.reset()
+                await self.reset()
                 return
             }
             self.lastUpdateTime = currentTime
-            
+
             if receivedFinalResult || receivedError {
                 audioEngine.stop()
                 audioEngine.inputNode.removeTap(onBus: 0)
             }
         }
-        
+
         if let result {
             print(result.bestTranscription.formattedString)
             transcribe(result.bestTranscription.formattedString)
         }
     }
-    
+
     
     nonisolated private func transcribe(_ message: String) {
         Task { @MainActor in
