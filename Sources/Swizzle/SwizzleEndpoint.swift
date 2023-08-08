@@ -14,7 +14,7 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject, Swizzleable {
     private weak var parentPublisher: ObservableObjectPublisher?
     private var cancellable: AnyCancellable?
     
-    @Published private(set) var value: T? {
+    @Published private var value: T? {
         willSet {
             DispatchQueue.main.async {
                 self.objectWillChange.send()
@@ -46,6 +46,9 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject, Swizzleable {
     public var wrappedValue: T? {
         get {
             return value
+        }
+        set {
+            value = newValue
         }
     }
 
