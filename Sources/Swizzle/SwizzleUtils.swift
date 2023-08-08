@@ -115,3 +115,4 @@ extension Notification.Name {
     static let swizzleModelUpdated = Notification.Name("swizzleModelUpdated")
     static let swizzleStorageUpdated = Notification.Name("swizzleStorageUpdated")
 }
+

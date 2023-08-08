@@ -57,7 +57,15 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
         set {
             value = newValue
             if let newValue = newValue {
-                Swizzle.shared.saveValue(newValue, forKey: key)
+                
+                var valueToSend: Codable
+                if !(newValue is [String: Any]) {
+                    valueToSend = ["value": newValue]
+                } else{
+                    valueToSend = newValue
+                }
+
+                Swizzle.shared.saveValue(valueToSend, forKey: key)
             } else {
                 print("[Swizzle] Can't update a property of a nil object.")
             }
@@ -69,7 +77,11 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
     public func refresh() {
         Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
             DispatchQueue.main.async {
-                self?.value = fetchedValue
+                if let dict = fetchedValue as? [String: Codable], dict.count == 1, let value = dict["value"] as? T {
+                    self?.value = value
+                } else{
+                    self?.value = fetchedValue
+                }
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
                     Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
@@ -77,5 +89,4 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
             }
         }
     }
-
 }
