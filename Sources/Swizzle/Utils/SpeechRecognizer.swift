@@ -40,7 +40,8 @@ actor SpeechRecognizer: ObservableObject {
             transcribe(RecognizerError.nilRecognizer)
             return
         }
-        
+        print("Speech recognizer initialized successfully.")
+
         Task {
             do {
                 guard await SFSpeechRecognizer.hasAuthorizationToRecognize() else {
@@ -51,6 +52,8 @@ actor SpeechRecognizer: ObservableObject {
                     print("Error: Not permitted to record audio.")
                     throw RecognizerError.notPermittedToRecord
                 }
+                print("Permitted to record audio.")
+
             } catch {
                 transcribe(error)
             }
@@ -87,7 +90,8 @@ actor SpeechRecognizer: ObservableObject {
             self.transcribe(RecognizerError.recognizerIsUnavailable)
             return
         }
-        
+        print("Starting transcription...")
+
         do {
             let (audioEngine, request) = try Self.prepareEngine()
             self.audioEngine = audioEngine
