@@ -93,7 +93,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 }
 
 
-protocol SwizzleStorable {
+public protocol SwizzleStorable {
     func bindPublisher(_ publisher: ObservableObjectPublisher)
 }
 
