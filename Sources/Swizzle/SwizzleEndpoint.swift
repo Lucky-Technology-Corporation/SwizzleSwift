@@ -57,11 +57,15 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
                     fetchedValue = try await Swizzle.shared.getString(endpoint) as! T
                 } else if T.self == Int.self {
                     fetchedValue = try await Swizzle.shared.getInt(endpoint) as! T
+                } else if T.self == Bool.self {
+                    fetchedValue = try await Swizzle.shared.getBool(endpoint) as! T
+                } else if T.self == Double.self {
+                    fetchedValue = try await Swizzle.shared.getDouble(endpoint) as! T
                 } else {
                     let data = try await Swizzle.shared.getData(endpoint)
                     fetchedValue = try JSONDecoder().decode(T.self, from: data)
                 }
-//                let fetchedValue: T = try await Swizzle.shared.get(endpoint)
+
                 DispatchQueue.main.async {
                     self.value = fetchedValue
                     do {
