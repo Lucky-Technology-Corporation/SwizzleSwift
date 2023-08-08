@@ -47,13 +47,7 @@ public class Swizzle {
 
     private init() { }
 
-    /**
-    Configures the project ID and the test environment.
-
-    - Parameters:
-      - projectId: The ID of the project to construct the base URL.
-      - test: A Boolean flag that determines whether the API should point to the test environment. The default value is `true`.
-    */
+    
     public func configure(projectId: String, test: Bool = true) {
         var url = "https://\(projectId).swizzle.run"
         if(test){
@@ -65,72 +59,6 @@ public class Swizzle {
         apiBaseURL = URL(string: url)
     }
     
-    
-    func loadValue<T: Codable>(forKey key: String, defaultValue: T?, completion: @escaping (T?) -> Void) {
-        Task {
-            await waitForAuthentication()
-
-            do {
-                let data = try await getData("swizzle/db/\(key)/")
-
-                if let decodedData = try? JSONDecoder().decode(T.self, from: data) {
-                    DispatchQueue.main.async {
-                        completion(decodedData)
-                    }
-                    return
-                }
-
-                // If direct decoding fails, try decoding using the wrapper
-                if let wrappedData = try? JSONDecoder().decode(Wrapped<T>.self, from: data) {
-                    DispatchQueue.main.async {
-                        completion(wrappedData.value)
-                    }
-                    return
-                }
-
-                // If both decodings fail, handle the error
-                print("[Swizzle] Failed to fetch and decode data for key \(key)")
-                DispatchQueue.main.async {
-                    completion(defaultValue)
-                }
-                
-            } catch {
-                if let decodingError = error as? DecodingError,
-                   case .keyNotFound = decodingError {
-                    DispatchQueue.main.async {
-                        completion(defaultValue)
-                    }
-                } else {
-                    print("[Swizzle] Failed to fetch data for key \(key): \(error)")
-                    DispatchQueue.main.async {
-                        completion(defaultValue)
-                    }
-                }
-            }
-        }
-    }
-
-    func saveValue<T: Codable>(_ value: T, forKey key: String) {
-        guard let apiBaseURL = apiBaseURL else { return }
-        
-        do {
-            let data = try JSONEncoder().encode(value)
-            Swizzle.shared.userDefaults.set(data, forKey: key)
-        } catch {
-            print("[Swizzle] Failed to save \(key) locally")
-        }
-        
-        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
-        Task {
-            await waitForAuthentication()
-
-            do {
-                try await post(queryURL, data: value)
-            } catch {
-                print("[Swizzle] Failed to save \(key) remotely")
-            }
-        }
-    }
     
     //Easy function call getters
     public func get<T: Decodable>(_ functionName: String) async throws -> T {
@@ -202,7 +130,7 @@ public class Swizzle {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await URLSession.shared.data(for: request)
         return data
     }
     

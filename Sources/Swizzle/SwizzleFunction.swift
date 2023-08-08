@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @propertyWrapper
-public class SwizzleEndpoint<T: Codable>: ObservableObject, Swizzleable {
+public class SwizzleFunction<T: Codable>: ObservableObject, Swizzleable {
     public let objectWillChange = PassthroughSubject<Void, Never>()
     private weak var parentPublisher: ObservableObjectPublisher?
     private var cancellable: AnyCancellable?
@@ -52,7 +52,7 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject, Swizzleable {
         }
     }
 
-    public var projectedValue: SwizzleEndpoint { self }
+    public var projectedValue: SwizzleFunction { self }
     
     public func bindPublisher(_ publisher: ObservableObjectPublisher) {
         parentPublisher = publisher
