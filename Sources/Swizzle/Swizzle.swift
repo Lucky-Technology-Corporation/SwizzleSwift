@@ -71,10 +71,29 @@ public class Swizzle {
             await waitForAuthentication()
 
             do {
-                let deviceData: T = try await get("swizzle/db/\(key)/")
-                DispatchQueue.main.async {
-                    completion(deviceData)
+                let data = try await getData("swizzle/db/\(key)/")
+
+                if let decodedData = try? JSONDecoder().decode(T.self, from: data) {
+                    DispatchQueue.main.async {
+                        completion(decodedData)
+                    }
+                    return
                 }
+
+                // If direct decoding fails, try decoding using the wrapper
+                if let wrappedData = try? JSONDecoder().decode(Wrapped<T>.self, from: data) {
+                    DispatchQueue.main.async {
+                        completion(wrappedData.value)
+                    }
+                    return
+                }
+
+                // If both decodings fail, handle the error
+                print("[Swizzle] Failed to fetch and decode data for key \(key)")
+                DispatchQueue.main.async {
+                    completion(defaultValue)
+                }
+                
             } catch {
                 if let decodingError = error as? DecodingError,
                    case .keyNotFound = decodingError {

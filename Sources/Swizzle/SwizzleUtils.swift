@@ -116,3 +116,6 @@ extension Notification.Name {
     static let swizzleStorageUpdated = Notification.Name("swizzleStorageUpdated")
 }
 
+struct Wrapped<T: Codable>: Codable {
+    let value: T
+}
