@@ -93,57 +93,67 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 }
 
 
+
 @propertyWrapper
 public class SwizzleStoragePublished<T: Codable>: ObservableObject {
+    private var cancellable: AnyCancellable?
     private weak var parentPublisher: ObservableObjectPublisher?
 
-    @Published public var value: T? {
-        didSet {
-            if let newValue = value {
+    private var innerValue: T? {
+        willSet {
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+                self.parentPublisher?.send()
+            }
+        }
+    }
+
+    public var wrappedValue: T? {
+        get { innerValue }
+        set {
+            innerValue = newValue
+            if let newValue = newValue {
+                
                 var valueToSend: Codable
                 if !(newValue is [String: Any]) {
                     valueToSend = ["value": newValue]
-                } else {
+                } else{
                     valueToSend = newValue
                 }
+
                 Swizzle.shared.saveValue(valueToSend, forKey: key)
             } else {
                 print("[Swizzle] Can't update a property of a nil object.")
             }
-            parentPublisher?.send()
-            objectWillChange.send()
         }
     }
-    
+
+    public var projectedValue: SwizzleStoragePublished { self }
+
     let key: String
     var defaultValue: T?
 
-    public init(wrappedValue: T? = nil, _ key: String, publisher: ObservableObjectPublisher) {
+    public init(key: String) {
         self.key = key
-        self.defaultValue = wrappedValue
-        self.parentPublisher = publisher
-
+        
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
-            self.value = loadedValue
+            self.innerValue = loadedValue
         }
+
         refresh()
     }
     
-
-    public var wrappedValue: T? {
-        get { value }
-        set { value = newValue }
+    public func bindPublisher(_ publisher: ObservableObjectPublisher) {
+        parentPublisher = publisher
     }
-    
-    public var projectedValue: SwizzleStoragePublished { self }
     
     public func refresh() {
         Swizzle.shared.loadValue(forKey: key, defaultValue: defaultValue) { [weak self] fetchedValue in
             DispatchQueue.main.async {
                 if let dict = fetchedValue as? [String: Codable], dict.count == 1, let value = dict["value"] as? T {
-                    self?.value = value
+                    self?.innerValue = value
                 } else{
-                    self?.value = fetchedValue
+                    self?.innerValue = fetchedValue
                 }
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
