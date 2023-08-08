@@ -60,6 +60,7 @@ enum SwizzleError: LocalizedError {
     case badImage
     case badURL
     case badFormat
+    case permissionDenied
     
     var errorDescription: String? {
         switch self {
@@ -73,6 +74,8 @@ enum SwizzleError: LocalizedError {
             return NSLocalizedString("This URL is not correct", comment: "Incorrect URL format")
         case .badFormat:
             return NSLocalizedString("The input is not in the right format", comment: "Incorrect format")
+        case .permissionDenied:
+            return NSLocalizedString("The app doesn't have enough permissions to complete the request", comment: "Permission denied")
         }
     }
 }
