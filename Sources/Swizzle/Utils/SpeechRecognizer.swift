@@ -36,6 +36,7 @@ actor SpeechRecognizer: ObservableObject {
     init() {
         recognizer = SFSpeechRecognizer()
         guard recognizer != nil else {
+            print("Error: Failed to initialize speech recognizer.")
             transcribe(RecognizerError.nilRecognizer)
             return
         }
@@ -43,9 +44,11 @@ actor SpeechRecognizer: ObservableObject {
         Task {
             do {
                 guard await SFSpeechRecognizer.hasAuthorizationToRecognize() else {
+                    print("Error: Not authorized to recognize speech.")
                     throw RecognizerError.notAuthorizedToRecognize
                 }
                 guard await AVAudioSession.sharedInstance().hasPermissionToRecord() else {
+                    print("Error: Not permitted to record audio.")
                     throw RecognizerError.notPermittedToRecord
                 }
             } catch {
@@ -80,6 +83,7 @@ actor SpeechRecognizer: ObservableObject {
      */
     private func transcribe() {
         guard let recognizer, recognizer.isAvailable else {
+            print("Error: Recognizer is unavailable.")
             self.transcribe(RecognizerError.recognizerIsUnavailable)
             return
         }
@@ -123,7 +127,8 @@ actor SpeechRecognizer: ObservableObject {
         }
         audioEngine.prepare()
         try audioEngine.start()
-        
+        print("Audio engine started successfully.")
+
         return (audioEngine, request)
     }
     
@@ -151,8 +156,11 @@ actor SpeechRecognizer: ObservableObject {
         }
 
         if let result {
-            print(result.bestTranscription.formattedString)
+            print("Recognition Result: \(result.bestTranscription.formattedString)")
             transcribe(result.bestTranscription.formattedString)
+        }
+        if let error = error {
+            print("Recognition Error: \(error.localizedDescription)")
         }
     }
 
@@ -167,6 +175,7 @@ actor SpeechRecognizer: ObservableObject {
         }
     }
     nonisolated private func transcribe(_ error: Error) {
+        print("Transcription Error: \(errorMessage)")
         var errorMessage = ""
         if let error = error as? RecognizerError {
             errorMessage += error.message
