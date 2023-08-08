@@ -79,6 +79,10 @@ actor SpeechRecognizer: ObservableObject {
         }
     }
     
+    func getTranscript() -> String {
+        return transcript
+    }
+    
     /**
      Begin transcribing audio.
      
