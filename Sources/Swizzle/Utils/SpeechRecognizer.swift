@@ -34,7 +34,8 @@ actor SpeechRecognizer: ObservableObject {
      requests access to the speech recognizer and the microphone.
      */
     init() {
-        recognizer = SFSpeechRecognizer()
+        let locale = Locale(identifier: "en-US")
+        recognizer = SFSpeechRecognizer(locale: locale)
         guard recognizer != nil else {
             print("Error: Failed to initialize speech recognizer.")
             transcribe(RecognizerError.nilRecognizer)
