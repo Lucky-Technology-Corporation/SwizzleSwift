@@ -140,16 +140,16 @@ actor SpeechRecognizer: ObservableObject {
 
         Task {
             // Check the time difference
-            let currentTime = Date()
-            if let lastUpdateTime = await self.lastUpdateTime, currentTime.timeIntervalSince(lastUpdateTime) > 2, !receivedFinalResult {
-                // More than 2 seconds have passed since the last update and the result is not final
-                // This means the user has paused speaking
-                audioEngine.stop()
-                audioEngine.inputNode.removeTap(onBus: 0)
-                await self.reset()
-                return
-            }
-            await self.updateLastUpdateTime(currentTime)
+//            let currentTime = Date()
+//            if let lastUpdateTime = await self.lastUpdateTime, currentTime.timeIntervalSince(lastUpdateTime) > 2, !receivedFinalResult {
+//                // More than 2 seconds have passed since the last update and the result is not final
+//                // This means the user has paused speaking
+//                audioEngine.stop()
+//                audioEngine.inputNode.removeTap(onBus: 0)
+//                await self.reset()
+//                return
+//            }
+//            await self.updateLastUpdateTime(currentTime)
 
             if receivedFinalResult || receivedError {
                 audioEngine.stop()
