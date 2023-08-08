@@ -87,18 +87,15 @@ actor SpeechRecognizer: ObservableObject {
      */
     private func transcribe() {
         guard let recognizer, recognizer.isAvailable else {
-            print("Error: Recognizer is unavailable.")
             self.transcribe(RecognizerError.recognizerIsUnavailable)
             return
         }
-        print("Starting transcription...")
 
         do {
             let (audioEngine, request) = try Self.prepareEngine()
             self.audioEngine = audioEngine
             self.request = request
             self.task = recognizer.recognitionTask(with: request, resultHandler: { [self] result, error in
-                print("Inside recognitionTask handler.")
                 recognitionHandler(audioEngine: audioEngine, result: result, error: error)
             })
         } catch {
@@ -129,12 +126,10 @@ actor SpeechRecognizer: ObservableObject {
         
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
-            print("Appending buffer.")
             request.append(buffer)
         }
         audioEngine.prepare()
         try audioEngine.start()
-        print("Audio engine started successfully.")
 
         return (audioEngine, request)
     }
@@ -145,16 +140,16 @@ actor SpeechRecognizer: ObservableObject {
 
         Task {
             // Check the time difference
-//            let currentTime = Date()
-//            if let lastUpdateTime = await self.lastUpdateTime, currentTime.timeIntervalSince(lastUpdateTime) > 2, !receivedFinalResult {
-//                // More than 2 seconds have passed since the last update and the result is not final
-//                // This means the user has paused speaking
-//                audioEngine.stop()
-//                audioEngine.inputNode.removeTap(onBus: 0)
-//                await self.reset()
-//                return
-//            }
-//            await self.updateLastUpdateTime(currentTime)
+            let currentTime = Date()
+            if let lastUpdateTime = await self.lastUpdateTime, currentTime.timeIntervalSince(lastUpdateTime) > 2, !receivedFinalResult {
+                // More than 2 seconds have passed since the last update and the result is not final
+                // This means the user has paused speaking
+                audioEngine.stop()
+                audioEngine.inputNode.removeTap(onBus: 0)
+                await self.reset()
+                return
+            }
+            await self.updateLastUpdateTime(currentTime)
 
             if receivedFinalResult || receivedError {
                 audioEngine.stop()
@@ -188,7 +183,6 @@ actor SpeechRecognizer: ObservableObject {
         } else {
             errorMessage += error.localizedDescription
         }
-        print("Transcription Error: \(errorMessage)")
         Task { @MainActor [errorMessage] in
             transcript = "<< \(errorMessage) >>"
         }
