@@ -1,5 +1,7 @@
 import Foundation
 import Security
+import Combine
+
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -119,3 +121,18 @@ extension Notification.Name {
 struct Wrapped<T: Codable>: Codable {
     let value: T
 }
+
+extension Swizzle{
+    public static func bindToUI<T: ObservableObject>(_ object: T) {
+        for child in Mirror(reflecting: object).children {
+            if let child = child.value as? Swizzleable {
+                child.bindPublisher(object.objectWillChange as! ObservableObjectPublisher)
+            }
+        }
+    }
+}
+
+protocol Swizzleable {
+    func bindPublisher(_ publisher: ObservableObjectPublisher)
+}
+

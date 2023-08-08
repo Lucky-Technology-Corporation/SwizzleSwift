@@ -8,9 +8,10 @@
 import Foundation
 import Combine
 
+
 @propertyWrapper
-public class SwizzleEndpoint<T: Codable>: ObservableObject {
-    public let objectWillChange = PassthroughSubject<Void, Never>()
+public class SwizzleData<T: Codable>: ObservableObject, Swizzleable {
+    private var cancellable: AnyCancellable?
     private weak var parentPublisher: ObservableObjectPublisher?
 
     private var innerValue: T? {
@@ -27,10 +28,11 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
         set {
             innerValue = newValue
             if let newValue = newValue {
+                
                 var valueToSend: Codable
                 if !(newValue is [String: Any]) {
                     valueToSend = ["value": newValue]
-                } else {
+                } else{
                     valueToSend = newValue
                 }
 
@@ -41,19 +43,18 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
         }
     }
 
-    public var projectedValue: SwizzleEndpoint { self }
+    public var projectedValue: SwizzleData { self }
 
     let key: String
     var defaultValue: T?
 
-    public init(key: String, defaultValue: T? = nil) {
+    public init(key: String) {
         self.key = key
-        self.defaultValue = defaultValue
         
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.innerValue = loadedValue
         }
-        
+
         refresh()
     }
     
@@ -66,7 +67,7 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
             DispatchQueue.main.async {
                 if let dict = fetchedValue as? [String: Codable], dict.count == 1, let value = dict["value"] as? T {
                     self?.innerValue = value
-                } else {
+                } else{
                     self?.innerValue = fetchedValue
                 }
                 do {
@@ -77,3 +78,4 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
         }
     }
 }
+
