@@ -93,9 +93,13 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 }
 
 
+protocol SwizzleStorable {
+    func bindPublisher(_ publisher: ObservableObjectPublisher)
+}
+
 
 @propertyWrapper
-public class SwizzleStoragePublished<T: Codable>: ObservableObject {
+public class SwizzleStoragePublished<T: Codable>: ObservableObject, SwizzleStorable {
     private var cancellable: AnyCancellable?
     private weak var parentPublisher: ObservableObjectPublisher?
 
