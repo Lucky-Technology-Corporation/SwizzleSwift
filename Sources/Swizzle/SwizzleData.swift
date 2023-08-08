@@ -48,7 +48,7 @@ public class SwizzleData<T: Codable>: ObservableObject, Swizzleable {
     let key: String
     var defaultValue: T?
 
-    public init(key: String) {
+    public init(_ key: String) {
         self.key = key
         
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {

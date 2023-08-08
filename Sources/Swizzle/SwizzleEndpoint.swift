@@ -46,7 +46,7 @@ public class SwizzleEndpoint<T: Codable>: ObservableObject {
     let key: String
     var defaultValue: T?
 
-    public init(key: String, defaultValue: T? = nil) {
+    public init(_ key: String, defaultValue: T? = nil) {
         self.key = key
         self.defaultValue = defaultValue
         
