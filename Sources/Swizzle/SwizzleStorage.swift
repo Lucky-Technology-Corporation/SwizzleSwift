@@ -94,7 +94,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 
 
 extension Swizzle{
-    static func bindToUI<T: ObservableObject>(_ object: T) {
+    public static func bindToUI<T: ObservableObject>(_ object: T) {
         for child in Mirror(reflecting: object).children {
             if let child = child.value as? SwizzleStorable {
                 child.bindPublisher(object.objectWillChange as! ObservableObjectPublisher)
@@ -103,7 +103,7 @@ extension Swizzle{
     }
 }
 
-public protocol SwizzleStorable {
+protocol SwizzleStorable {
     func bindPublisher(_ publisher: ObservableObjectPublisher)
 }
 
