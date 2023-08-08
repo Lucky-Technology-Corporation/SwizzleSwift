@@ -142,7 +142,7 @@ actor SpeechRecognizer: ObservableObject {
                 await self.reset()
                 return
             }
-            self.lastUpdateTime = currentTime
+            await self.updateLastUpdateTime(currentTime)
 
             if receivedFinalResult || receivedError {
                 audioEngine.stop()
@@ -156,6 +156,10 @@ actor SpeechRecognizer: ObservableObject {
         }
     }
 
+    // Actor-isolated function to update lastUpdateTime
+    private func updateLastUpdateTime(_ time: Date) {
+        self.lastUpdateTime = time
+    }
     
     nonisolated private func transcribe(_ message: String) {
         Task { @MainActor in
