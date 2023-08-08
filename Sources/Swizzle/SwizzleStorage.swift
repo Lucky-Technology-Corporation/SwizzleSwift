@@ -95,7 +95,7 @@ public class SwizzleStorage<T: Codable>: ObservableObject {
 
 @propertyWrapper
 public class SwizzleStoragePublished<T: Codable>: ObservableObject {
-    weak var parent: AnyObject?
+    private weak var parentPublisher: ObservableObjectPublisher?
 
     @Published public var value: T? {
         didSet {
@@ -110,17 +110,18 @@ public class SwizzleStoragePublished<T: Codable>: ObservableObject {
             } else {
                 print("[Swizzle] Can't update a property of a nil object.")
             }
-            (parent as? ObservableObjectPublisher)?.send()
+            parentPublisher?.send()
+            objectWillChange.send()
         }
     }
     
     let key: String
     var defaultValue: T?
 
-    public init(wrappedValue: T? = nil, _ key: String, parent: (any ObservableObject)? = nil) {
+    public init(wrappedValue: T? = nil, _ key: String, publisher: ObservableObjectPublisher) {
         self.key = key
         self.defaultValue = wrappedValue
-        self.parent = parent as AnyObject
+        self.parentPublisher = publisher
 
         if let data = Swizzle.shared.userDefaults.data(forKey: key), let loadedValue = try? JSONDecoder().decode(T.self, from: data) {
             self.value = loadedValue
