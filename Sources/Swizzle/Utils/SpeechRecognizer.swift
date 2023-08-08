@@ -175,13 +175,13 @@ actor SpeechRecognizer: ObservableObject {
         }
     }
     nonisolated private func transcribe(_ error: Error) {
-        print("Transcription Error: \(errorMessage)")
         var errorMessage = ""
         if let error = error as? RecognizerError {
             errorMessage += error.message
         } else {
             errorMessage += error.localizedDescription
         }
+        print("Transcription Error: \(errorMessage)")
         Task { @MainActor [errorMessage] in
             transcript = "<< \(errorMessage) >>"
         }
