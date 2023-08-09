@@ -105,6 +105,17 @@ public class Swizzle {
         return apiBaseURL
     }
     
+    public func getFullUrl(for functionName: String, with parameters: [String: AnyObject]?) -> URL? {
+        guard let baseUrl = apiBaseURL else { return nil }
+        var fullUrl = baseUrl.appendingPathComponent(functionName)
+    
+        if let params = parameters{
+            fullUrl = addQueryParameters(params, to: baseUrl)
+        }
+        
+        return fullUrl
+    }
+    
     struct ImageUpload: Codable {
         var data: String
     }
