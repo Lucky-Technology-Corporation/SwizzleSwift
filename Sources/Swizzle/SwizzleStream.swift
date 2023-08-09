@@ -35,8 +35,8 @@ public class SwizzleStream{
         let baseUrl = Swizzle.shared.apiBaseURL?.appendingPathComponent(functionName)
         
         var queryUrl: URL!
-        if(parameters){
-            queryUrl = addQueryParameters(parameters, to: baseUrl)
+        if let params = parameters as? [String: String]{
+            queryUrl = addQueryParameters(params, to: baseUrl)
         } else{
             queryUrl = baseUrl
         }
