@@ -134,7 +134,7 @@ extension Swizzle{
         }
     }
     
-    func addQueryParameters(_ params: [String: AnyObject], to baseURL: URL) -> URL {
+    func addQueryParameters(_ params: [String: Any], to baseURL: URL) -> URL {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
         
         components?.queryItems = params.map { (key, value) in
