@@ -101,6 +101,10 @@ public class Swizzle {
         return try await post(queryURL, data: data)
     }
     
+    public func getBaseURL() -> URL?{
+        return apiBaseURL
+    }
+    
     struct ImageUpload: Codable {
         var data: String
     }
