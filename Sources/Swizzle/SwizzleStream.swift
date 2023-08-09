@@ -13,9 +13,10 @@ import Speech
 public class SwizzleStream{
     private var player: AVPlayer?
     @Published var transcript: String = ""
-    private var speechRecognizer = SpeechRecognizer()
+    private var speechRecognizer: SpeechRecognizer?
 
     public func startSpeechRecognition() {
+        if(speechRecognizer == nil){ speechRecognizer = SpeechRecognizer() }
         Task {
             await speechRecognizer.startTranscribing()
         }
