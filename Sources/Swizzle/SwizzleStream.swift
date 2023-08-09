@@ -18,15 +18,15 @@ public class SwizzleStream{
     public func startSpeechRecognition() {
         if(speechRecognizer == nil){ speechRecognizer = SpeechRecognizer() }
         Task {
-            await speechRecognizer.startTranscribing()
+            await speechRecognizer!.startTranscribing()
         }
     }
     
     public func stopSpeechRecognition() async -> String {
         return await Task<String, Never> {
-            let transcript = await speechRecognizer.getTranscript()
-            await speechRecognizer.stopTranscribing()
-            await speechRecognizer.resetTranscript()
+            let transcript = await speechRecognizer!.getTranscript()
+            await speechRecognizer!.stopTranscribing()
+            await speechRecognizer!.resetTranscript()
             return transcript
         }.value
     }
