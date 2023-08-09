@@ -133,6 +133,16 @@ extension Swizzle{
             }
         }
     }
+    
+    func addQueryParameters(_ params: [String: String], to baseURL: URL) -> URL? {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
+        
+        components?.queryItems = params.map { (key, value) in
+            return URLQueryItem(name: key, value: value)
+        }
+        
+        return components?.url
+    }
 }
 
 protocol Swizzleable {

@@ -30,8 +30,12 @@ public class SwizzleStream{
         }.value
     }
     
-    func playAudio(from url: URL, completion: @escaping (Bool, Error?) -> Void) {
-        let asset = AVAsset(url: url)
+    public func playAudio(from functionName: String, with parameters: [String: String], completion: @escaping (Bool, Error?) -> Void) {
+        
+        let baseUrl = Swizzle.shared.apiBaseURL?.appendingPathComponent(functionName)
+        let queryUrl = addQueryParameters(parameters, to: baseUrl)
+        
+        let asset = AVAsset(url: queryUrl)
         let playerItem = AVPlayerItem(asset: asset)
         
         // Add an observer to know when the audio finishes playing
