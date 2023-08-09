@@ -41,7 +41,6 @@ actor SpeechRecognizer: ObservableObject {
             transcribe(RecognizerError.nilRecognizer)
             return
         }
-        print("Speech recognizer initialized successfully.")
 
         Task {
             do {
@@ -53,7 +52,6 @@ actor SpeechRecognizer: ObservableObject {
                     print("Error: Not permitted to record audio.")
                     throw RecognizerError.notPermittedToRecord
                 }
-                print("Permitted to record audio.")
 
             } catch {
                 transcribe(error)
@@ -162,7 +160,6 @@ actor SpeechRecognizer: ObservableObject {
         }
 
         if let result {
-            print("Recognition Result: \(result.bestTranscription.formattedString)")
             transcribe(result.bestTranscription.formattedString)
         }
         if let error = error {
