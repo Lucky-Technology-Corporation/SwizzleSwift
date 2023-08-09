@@ -105,6 +105,10 @@ public class Swizzle {
         return apiBaseURL
     }
     
+    public func getUserId() -> String?{
+        return userId
+    }
+    
     public func getFullUrl(for functionName: String, with parameters: [String: Any]?) -> URL? {
         guard let baseUrl = apiBaseURL else { return nil }
         var fullUrl = baseUrl.appendingPathComponent(functionName)
