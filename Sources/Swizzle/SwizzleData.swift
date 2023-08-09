@@ -30,7 +30,7 @@ public class SwizzleData<T: Codable>: ObservableObject, Swizzleable {
             if let newValue = newValue {
                 
                 var valueToSend: Codable
-                if !(newValue is [String: Any]) {
+                if !(isStruct(newValue)) {
                     valueToSend = ["value": newValue]
                 } else{
                     valueToSend = newValue
@@ -77,6 +77,12 @@ public class SwizzleData<T: Codable>: ObservableObject, Swizzleable {
             }
         }
     }
+    
+    func isStruct(_ value: Any) -> Bool {
+        let mirror = Mirror(reflecting: value)
+        return mirror.displayStyle == .struct
+    }
+
 }
 
 extension Swizzle{
