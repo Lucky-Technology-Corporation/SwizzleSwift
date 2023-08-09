@@ -162,9 +162,9 @@ actor SpeechRecognizer: ObservableObject {
         if let result {
             transcribe(result.bestTranscription.formattedString)
         }
-        if let error = error {
-            print("Recognition Error: \(error.localizedDescription)")
-        }
+//        if let error = error {
+//            print("Recognition Error: \(error.localizedDescription)")
+//        }
     }
 
     // Actor-isolated function to update lastUpdateTime
