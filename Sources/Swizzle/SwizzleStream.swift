@@ -30,10 +30,16 @@ public class SwizzleStream{
         }.value
     }
     
-    public func playAudio(from functionName: String, with parameters: [String: String], completion: @escaping (Bool, Error?) -> Void) {
+    public func playAudio(from functionName: String, with parameters: [String: String]?, completion: @escaping (Bool, Error?) -> Void) {
         
         let baseUrl = Swizzle.shared.apiBaseURL?.appendingPathComponent(functionName)
-        let queryUrl = addQueryParameters(parameters, to: baseUrl)
+        
+        var queryUrl: URL!
+        if(parameters){
+            queryUrl = addQueryParameters(parameters, to: baseUrl)
+        } else{
+            queryUrl = baseUrl
+        }
         
         let asset = AVAsset(url: queryUrl)
         let playerItem = AVPlayerItem(asset: asset)
@@ -47,6 +53,16 @@ public class SwizzleStream{
         player?.play()
     }
 
+    func addQueryParameters(_ params: [String: String], to baseURL: URL) -> URL? {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
+        
+        components?.queryItems = params.map { (key, value) in
+            return URLQueryItem(name: key, value: value)
+        }
+        
+        return components?.url
+    }
+    
     public init(){ }
 
 }
