@@ -122,9 +122,9 @@ actor SpeechRecognizer: ObservableObject {
         request.shouldReportPartialResults = true
         
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playAndRecord, mode: .measurement, options: .duckOthers)
+        try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: .duckOthers)
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-        try audioSession.overrideOutputAudioPort(.speaker) 
+        try audioSession.overrideOutputAudioPort(.speaker)
         let inputNode = audioEngine.inputNode
         
         let recordingFormat = inputNode.outputFormat(forBus: 0)
