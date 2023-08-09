@@ -110,7 +110,7 @@ public class Swizzle {
         var fullUrl = baseUrl.appendingPathComponent(functionName)
     
         if let params = parameters{
-            fullUrl = addQueryParameters(params, to: baseUrl)
+            fullUrl = addQueryParameters(params, to: fullUrl)
         }
         
         return fullUrl
