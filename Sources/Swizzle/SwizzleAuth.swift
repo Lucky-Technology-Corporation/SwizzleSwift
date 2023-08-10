@@ -54,7 +54,7 @@ extension Swizzle{
         let params = ["code": code]
 
         do {
-            let response: SwizzleLoginResponse = try await post("swizzle/auth/verify-code", data: params, skipAuthenticating: true)
+            let response: SwizzleLoginResponse = try await postAndDecodeResponse("swizzle/auth/verify-code", data: params, skipAuthenticating: true)
             accessToken = response.accessToken
             refreshToken = response.refreshToken
             userId = response.userId
@@ -70,7 +70,7 @@ extension Swizzle{
         let params = ["deviceId": deviceId]
 
         do {
-            let response: SwizzleLoginResponse = try await post("swizzle/auth/anonymous", data: params, skipAuthenticating: true)
+            let response: SwizzleLoginResponse = try await postAndDecodeResponse("swizzle/auth/anonymous", data: params, skipAuthenticating: true)
             accessToken = response.accessToken
             refreshToken = response.refreshToken
             userId = response.userId
@@ -86,7 +86,7 @@ extension Swizzle{
         let params = ["refreshToken": refreshToken, "deviceId": deviceId]
         
         do {
-            let response: SwizzleLoginResponse = try await post("swizzle/auth/refresh", data: params, skipAuthenticating: true)
+            let response: SwizzleLoginResponse = try await postAndDecodeResponse("swizzle/auth/refresh", data: params, skipAuthenticating: true)
             self.accessToken = response.accessToken
             self.refreshToken = response.refreshToken
         } catch {

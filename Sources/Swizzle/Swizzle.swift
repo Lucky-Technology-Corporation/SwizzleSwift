@@ -95,7 +95,7 @@ public class Swizzle {
         return try await postEmpty(functionName, data: data)
     }
     
-    public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> U {
+    public func postAndDecodeResponse<T: Encodable, U: Decodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> U {
         if(!skipAuthenticating){
             await waitForAuthentication()
         }
