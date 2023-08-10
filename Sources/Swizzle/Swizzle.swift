@@ -89,16 +89,32 @@ public class Swizzle {
     
     public func post<T: Encodable>(_ functionName: String, data: T) async throws {
         await waitForAuthentication()
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let queryURL = apiBaseURL.appendingPathComponent(functionName)
-        return try await post(queryURL, data: data)
+        return try await postEmpty(functionName, data: data)
     }
     
     public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
         await waitForAuthentication()
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let queryURL = apiBaseURL.appendingPathComponent(functionName)
-        return try await post(queryURL, data: data)
+        return try await postCodable(functionName, data: data)
+    }
+    
+    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> String {
+        await waitForAuthentication()
+        return try await postString(functionName, data: data)
+    }
+    
+    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> Int {
+        await waitForAuthentication()
+        return try await postInt(functionName, data: data)
+    }
+    
+    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> Double {
+        await waitForAuthentication()
+        return try await postDouble(functionName, data: data)
+    }
+    
+    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> Bool {
+        await waitForAuthentication()
+        return try await postBool(functionName, data: data)
     }
     
     public func getBaseURL() -> URL?{
@@ -145,22 +161,15 @@ public class Swizzle {
     
     //REST APIs
     func getData(_ functionName: String) async throws -> Data {
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let url = apiBaseURL.appendingPathComponent(functionName)
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        let request = try buildGetRequest(functionName)
+        
         let (data, _) = try await URLSession.shared.data(for: request)
         return data
     }
     
     func getCodable<T: Decodable>(_ functionName: String) async throws -> T {
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let url = apiBaseURL.appendingPathComponent(functionName)
+        let request = try buildGetRequest(functionName)
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
         let (data, _) = try await URLSession.shared.data(for: request)
         let decoder = JSONDecoder()
         let response = try decoder.decode(T.self, from: data)
@@ -168,12 +177,8 @@ public class Swizzle {
     }
     
     func getString(_ functionName: String) async throws -> String {
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let url = apiBaseURL.appendingPathComponent(functionName)
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+        let request = try buildGetRequest(functionName)
+
         let (data, _) = try await URLSession.shared.data(for: request)
         guard let string = String(data: data, encoding: .utf8) else {
             throw URLError(.badServerResponse)
@@ -182,12 +187,8 @@ public class Swizzle {
     }
     
     func getInt(_ functionName: String) async throws -> Int {
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let url = apiBaseURL.appendingPathComponent(functionName)
+        let request = try buildGetRequest(functionName)
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
         let (data, _) = try await URLSession.shared.data(for: request)
         guard let string = String(data: data, encoding: .utf8),
               let int = Int(string) else {
@@ -197,12 +198,8 @@ public class Swizzle {
     }
     
     func getDouble(_ functionName: String) async throws -> Double {
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let url = apiBaseURL.appendingPathComponent(functionName)
+        let request = try buildGetRequest(functionName)
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
         let (data, _) = try await URLSession.shared.data(for: request)
         guard let string = String(data: data, encoding: .utf8),
               let double = Double(string) else {
@@ -212,12 +209,8 @@ public class Swizzle {
     }
     
     func getBool(_ functionName: String) async throws -> Bool {
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
-        let url = apiBaseURL.appendingPathComponent(functionName)
+        let request = try buildGetRequest(functionName)
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
         let (data, _) = try await URLSession.shared.data(for: request)
         guard let string = String(data: data, encoding: .utf8),
               let bool = Bool(string) else {
@@ -227,36 +220,62 @@ public class Swizzle {
     }
 
 
-    func post<T: Encodable>(_ url: URL, data: T) async throws {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
-        
-        let encoder = JSONEncoder()
-        let jsonData = try encoder.encode(data)
-        request.httpBody = jsonData
+    func postEmpty<T: Encodable>(_ functionName: String, data: T) async throws {
+        let request = try buildPostRequest(functionName, data: data)
         _ = try await URLSession.shared.data(for: request)
     }
 
-    func post<T: Encodable, U: Decodable>(_ url: URL, data: T) async throws -> U {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
+    func postCodable<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
+        let request = try buildPostRequest(functionName, data: data)
 
-        let encoder = JSONEncoder()
-        let jsonData = try encoder.encode(data)
-        request.httpBody = jsonData
-        
         let (responseData, _) = try await URLSession.shared.data(for: request)
         let decoder = JSONDecoder()
-        
         let response = try decoder.decode(U.self, from: responseData)
-        
         return response
     }
+    
+    func postString<T: Encodable>(_ functionName: String, data: T) async throws -> String {
+        let request = try buildPostRequest(functionName, data: data)
+        
+        let (responseData, _) = try await URLSession.shared.data(for: request)
+        guard let string = String(data: responseData, encoding: .utf8) else {
+            throw URLError(.badServerResponse)
+        }
+        return string
+    }
 
+    func postInt<T: Encodable>(_ functionName: String, data: T) async throws -> Int {
+        let request = try buildPostRequest(functionName, data: data)
+        let (responseData, _) = try await URLSession.shared.data(for: request)
+
+        guard let string = String(data: responseData, encoding: .utf8),
+              let int = Int(string) else {
+            throw URLError(.badServerResponse)
+        }
+        return int
+    }
+    
+    func postDouble<T: Encodable>(_ functionName: String, data: T) async throws -> Double {
+        let request = try buildPostRequest(functionName, data: data)
+        let (responseData, _) = try await URLSession.shared.data(for: request)
+
+        guard let string = String(data: responseData, encoding: .utf8),
+              let double = Double(string) else {
+            throw URLError(.badServerResponse)
+        }
+        return double
+    }
+    
+    func postBool<T: Encodable>(_ functionName: String, data: T) async throws -> Bool {
+        let request = try buildPostRequest(functionName, data: data)
+        let (responseData, _) = try await URLSession.shared.data(for: request)
+
+        guard let string = String(data: responseData, encoding: .utf8),
+              let bool = Bool(string) else {
+            throw URLError(.badServerResponse)
+        }
+        return bool
+    }
 }
 
 
