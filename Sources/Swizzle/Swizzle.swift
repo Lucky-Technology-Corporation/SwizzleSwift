@@ -146,11 +146,10 @@ public class Swizzle {
     
     #if canImport(UIKit)
     public func upload(image: UIImage, size: CGSize = CGSize(width: 200, height: 200), compressionQuality: CGFloat = 0.7) async throws -> URL{
-        guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let imageData = image.resized(to: size)?.jpegData(compressionQuality: compressionQuality)
         guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
-        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/storage")
-        let response: ImageUploadResult = try await self.post(queryURL, data: ImageUpload(data: base64String))
+
+        let response: ImageUploadResult = try await self.post("swizzle/db/storage", data: ImageUpload(data: base64String))
         guard let url = URL(string: response.url) else {
             throw SwizzleError.badURL
         }
