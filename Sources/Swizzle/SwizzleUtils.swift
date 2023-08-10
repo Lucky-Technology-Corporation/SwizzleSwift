@@ -144,7 +144,7 @@ extension Swizzle{
         return components?.url ?? baseURL
     }
     
-    func buildPostRequest<T: Encodable>(_ functionName: String, data: T) throws -> URLRequest{
+    func buildPostRequest<T: Encodable>(_ functionName: String, data: T?) throws -> URLRequest{
         guard let apiBaseURL = apiBaseURL else { throw SwizzleError.swizzleNotInitialized }
         let url = apiBaseURL.appendingPathComponent(functionName)
 
@@ -152,10 +152,11 @@ extension Swizzle{
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
-
-        let encoder = JSONEncoder()
-        let jsonData = try encoder.encode(data)
-        request.httpBody = jsonData
+        if(data != nil){
+            let encoder = JSONEncoder()
+            let jsonData = try encoder.encode(data)
+            request.httpBody = jsonData
+        }
         return request
     }
     
@@ -173,3 +174,6 @@ protocol Swizzleable {
     func bindPublisher(_ publisher: ObservableObjectPublisher)
 }
 
+public struct EmptyResponse{
+    
+}

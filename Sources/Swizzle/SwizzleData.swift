@@ -130,9 +130,7 @@ extension Swizzle{
         }
     }
 
-    func saveValue<T: Codable>(_ value: T, forKey key: String) {
-        guard let apiBaseURL = apiBaseURL else { return }
-        
+    func saveValue<T: Codable>(_ value: T, forKey key: String) {        
         do {
             let data = try JSONEncoder().encode(value)
             Swizzle.shared.userDefaults.set(data, forKey: key)
@@ -140,12 +138,11 @@ extension Swizzle{
             print("[Swizzle] Failed to save \(key) locally")
         }
         
-        let queryURL = apiBaseURL.appendingPathComponent("swizzle/db/\(key)/")
         Task {
             await waitForAuthentication()
 
             do {
-                try await post(queryURL, data: value)
+                let _: EmptyResponse = try await post("swizzle/db/\(key)/", data: value)
             } catch {
                 print("[Swizzle] Failed to save \(key) remotely")
             }
