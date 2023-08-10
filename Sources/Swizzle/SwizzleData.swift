@@ -110,8 +110,7 @@ extension Swizzle{
                     return
                 }
 
-                // If both decodings fail, handle the error
-                print("[Swizzle] Failed to fetch and decode data for key \(key)")
+                // If both decodings fail, return the default value.
                 DispatchQueue.main.async {
                     completion(defaultValue)
                 }
