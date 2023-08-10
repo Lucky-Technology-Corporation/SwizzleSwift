@@ -73,7 +73,9 @@ public class SwizzleData<T: Codable>: ObservableObject, Swizzleable {
                 do {
                     let data = try JSONEncoder().encode(fetchedValue)
                     Swizzle.shared.userDefaults.set(data, forKey: self?.key ?? "")
-                } catch { }
+                } catch { 
+                    print(error)
+                }
             }
         }
     }
