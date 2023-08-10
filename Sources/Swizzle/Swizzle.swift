@@ -88,10 +88,9 @@ public class Swizzle {
     }
     
     
-    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> EmptyResponse {
+    public func post<T: Encodable>(ignoringResponseFrom functionName: String, data: T) async throws {
         await waitForAuthentication()
-        try await postEmpty(functionName, data: data)
-        return EmptyResponse()
+        return try await postEmpty(functionName, data: data)
     }
     
     public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {

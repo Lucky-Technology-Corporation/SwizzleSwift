@@ -37,7 +37,7 @@ extension Swizzle{
         let params = ["phoneNumber": to]
 
         do {
-            let _ : EmptyResponse = try await post("swizzle/auth/sms/request-code", data: params)
+            try await post(ignoringResponseFrom: "swizzle/auth/sms/request-code", data: params)
             return
         } catch {
             print("[Swizzle] Couldn't send SMS code: \(error)")

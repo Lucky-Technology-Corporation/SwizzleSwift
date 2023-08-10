@@ -130,7 +130,7 @@ extension Swizzle{
         }
     }
 
-    func saveValue<T: Codable>(_ value: T, forKey key: String) {        
+    func saveValue<T: Codable>(_ value: T, forKey key: String) {
         do {
             let data = try JSONEncoder().encode(value)
             Swizzle.shared.userDefaults.set(data, forKey: key)
@@ -142,7 +142,7 @@ extension Swizzle{
             await waitForAuthentication()
 
             do {
-                let _: EmptyResponse = try await post("swizzle/db/\(key)/", data: value)
+                try await post(ignoringResponseFrom: "swizzle/db/\(key)/", data: value)
             } catch {
                 print("[Swizzle] Failed to save \(key) remotely")
             }
