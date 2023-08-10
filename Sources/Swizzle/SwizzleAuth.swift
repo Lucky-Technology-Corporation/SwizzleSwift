@@ -37,7 +37,7 @@ extension Swizzle{
         let params = ["phoneNumber": to]
 
         do {
-            try await post(ignoringResponseFrom: "swizzle/auth/sms/request-code", data: params)
+            try await post(ignoringResponseFrom: "swizzle/auth/sms/request-code", data: params, skipAuthenticating: true)
             return
         } catch {
             print("[Swizzle] Couldn't send SMS code: \(error)")
@@ -54,7 +54,7 @@ extension Swizzle{
         let params = ["code": code]
 
         do {
-            let response: SwizzleLoginResponse = try await post("swizzle/auth/verify-code", data: params)
+            let response: SwizzleLoginResponse = try await post("swizzle/auth/verify-code", data: params, skipAuthenticating: true)
             accessToken = response.accessToken
             refreshToken = response.refreshToken
             userId = response.userId
@@ -70,7 +70,7 @@ extension Swizzle{
         let params = ["deviceId": deviceId]
 
         do {
-            let response: SwizzleLoginResponse = try await post("swizzle/auth/anonymous", data: params)
+            let response: SwizzleLoginResponse = try await post("swizzle/auth/anonymous", data: params, skipAuthenticating: true)
             accessToken = response.accessToken
             refreshToken = response.refreshToken
             userId = response.userId
@@ -86,7 +86,7 @@ extension Swizzle{
         let params = ["refreshToken": refreshToken, "deviceId": deviceId]
         
         do {
-            let response: SwizzleLoginResponse = try await post("swizzle/auth/refresh", data: params)
+            let response: SwizzleLoginResponse = try await post("swizzle/auth/refresh", data: params, skipAuthenticating: true)
             self.accessToken = response.accessToken
             self.refreshToken = response.refreshToken
         } catch {

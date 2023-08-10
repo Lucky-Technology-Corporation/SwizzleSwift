@@ -88,33 +88,45 @@ public class Swizzle {
     }
     
     
-    public func post<T: Encodable>(ignoringResponseFrom functionName: String, data: T) async throws {
-        await waitForAuthentication()
+    public func post<T: Encodable>(ignoringResponseFrom functionName: String, data: T, skipAuthenticating: Bool = false) async throws {
+        if(!skipAuthenticating){
+            await waitForAuthentication()
+        }
         return try await postEmpty(functionName, data: data)
     }
     
-    public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
-        await waitForAuthentication()
+    public func post<T: Encodable, U: Decodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> U {
+        if(!skipAuthenticating){
+            await waitForAuthentication()
+        }
         return try await postCodable(functionName, data: data)
     }
     
-    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> String {
-        await waitForAuthentication()
+    public func post<T: Encodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> String {
+        if(!skipAuthenticating){
+            await waitForAuthentication()
+        }
         return try await postString(functionName, data: data)
     }
     
-    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> Int {
-        await waitForAuthentication()
+    public func post<T: Encodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> Int {
+        if(!skipAuthenticating){
+            await waitForAuthentication()
+        }
         return try await postInt(functionName, data: data)
     }
     
-    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> Double {
-        await waitForAuthentication()
+    public func post<T: Encodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> Double {
+        if(!skipAuthenticating){
+            await waitForAuthentication()
+        }
         return try await postDouble(functionName, data: data)
     }
     
-    public func post<T: Encodable>(_ functionName: String, data: T) async throws -> Bool {
-        await waitForAuthentication()
+    public func post<T: Encodable>(_ functionName: String, data: T, skipAuthenticating: Bool = false) async throws -> Bool {
+        if(!skipAuthenticating){
+            await waitForAuthentication()
+        }
         return try await postBool(functionName, data: data)
     }
     
