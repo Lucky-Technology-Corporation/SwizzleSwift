@@ -168,12 +168,15 @@ extension Swizzle{
         request.setValue("Bearer \(accessToken ?? "")", forHTTPHeaderField: "Authorization")
         return request
     }
+    
 }
 
 protocol Swizzleable {
     func bindPublisher(_ publisher: ObservableObjectPublisher)
 }
 
-public struct EmptyResponse{
-    
+public struct Payload: Codable {}
+
+public extension Payload {
+    static let none: Payload = Payload()
 }
