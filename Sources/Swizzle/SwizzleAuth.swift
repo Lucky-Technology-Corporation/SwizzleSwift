@@ -69,6 +69,9 @@ extension Swizzle{
     public func deleteAccount() async throws {
         do {
             try await post(ignoringResponseFrom: "swizzle/auth/delete-account", data: Payload.none)
+            accessToken = nil
+            refreshToken = nil
+            userId = nil
             return
         } catch {
             print("[Swizzle] Couldn't send SMS code: \(error)")

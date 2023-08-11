@@ -26,8 +26,15 @@ public class Swizzle {
     var userId: String? {
         didSet {
             userDefaults.setValue(userId, forKey: "userIdSwizzle")
+            if(userId == nil){
+                isAuthenticated = false
+            } else{
+                isAuthenticated = true
+            }
         }
     }
+    
+    public var isAuthenticated = false
     
     var deviceId: String?
 
