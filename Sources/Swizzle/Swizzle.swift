@@ -169,7 +169,7 @@ public class Swizzle {
         let imageData = image.resized(to: size)?.jpegData(compressionQuality: compressionQuality)
         guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
 
-        let response: ImageUploadResult = try await self.postAndDecodeResponse("swizzle/db/storage", data: ImageUpload(data: base64String))
+        let response: ImageUploadResult = try await self.post(decodingResponseFrom: "swizzle/db/storage", data: ImageUpload(data: base64String))
         guard let url = URL(string: response.url) else {
             throw SwizzleError.badURL
         }
