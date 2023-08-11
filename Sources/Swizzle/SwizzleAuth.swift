@@ -66,7 +66,7 @@ extension Swizzle{
 
     }
     
-    public func deleteAccount(shouldReauthenticateAnonymously: Bool = false) async throws {
+    public func deleteAccount(shouldReauthenticateAnonymously: Bool = true) async throws {
         do {
             try await post(ignoringResponseFrom: "swizzle/auth/delete-account", data: Payload.none)
             accessToken = nil
