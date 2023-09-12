@@ -166,14 +166,19 @@ public class Swizzle {
     
     #if canImport(UIKit)
     public func upload(image: UIImage, size: CGSize = CGSize(width: 500, height: 500), compressionQuality: CGFloat = 0.7) async throws -> URL{
-        let imageData = image.resized(to: size)?.jpegData(compressionQuality: compressionQuality)
-        guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
-
-        let response: ImageUploadResult = try await self.post(decodingResponseFrom: "swizzle/db/storage", data: ImageUpload(data: base64String))
-        guard let url = URL(string: response.url) else {
-            throw SwizzleError.badURL
+        do{
+            let imageData = image.resized(to: size)?.jpegData(compressionQuality: compressionQuality)
+            guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
+            
+            let response: ImageUploadResult = try await self.post(decodingResponseFrom: "swizzle/db/storage", data: ImageUpload(data: base64String))
+            guard let url = URL(string: response.url) else {
+                throw SwizzleError.badURL
+            }
+            return url
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return url
     }
     #endif
     
@@ -195,51 +200,72 @@ public class Swizzle {
             let response = try decoder.decode(T.self, from: data)
             return response
         }catch{
+            explain(error: error)
             throw error
         }
     }
     
     func getString(_ functionName: String) async throws -> String {
-        let request = try buildGetRequest(functionName)
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-        guard let string = String(data: data, encoding: .utf8) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildGetRequest(functionName)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
+            guard let string = String(data: data, encoding: .utf8) else {
+                throw URLError(.badServerResponse)
+            }
+            return string
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return string
     }
     
     func getInt(_ functionName: String) async throws -> Int {
-        let request = try buildGetRequest(functionName)
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-        guard let string = String(data: data, encoding: .utf8),
-              let int = Int(string) else {
-            throw URLError(.badServerResponse)
-        }
+        do{
+            let request = try buildGetRequest(functionName)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
+            guard let string = String(data: data, encoding: .utf8),
+                  let int = Int(string) else {
+                throw URLError(.badServerResponse)
+            }
         return int
+        }catch{
+            explain(error: error)
+            throw error
+        }
     }
     
     func getDouble(_ functionName: String) async throws -> Double {
-        let request = try buildGetRequest(functionName)
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-        guard let string = String(data: data, encoding: .utf8),
-              let double = Double(string) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildGetRequest(functionName)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
+            guard let string = String(data: data, encoding: .utf8),
+                  let double = Double(string) else {
+                throw URLError(.badServerResponse)
+            }
+            return double
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return double
     }
     
     func getBool(_ functionName: String) async throws -> Bool {
-        let request = try buildGetRequest(functionName)
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-        guard let string = String(data: data, encoding: .utf8),
-              let bool = Bool(string) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildGetRequest(functionName)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
+            guard let string = String(data: data, encoding: .utf8),
+                  let bool = Bool(string) else {
+                throw URLError(.badServerResponse)
+            }
+            return bool
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return bool
     }
 
 
@@ -257,51 +283,77 @@ public class Swizzle {
             response = try decoder.decode(U.self, from: responseData)
             return response!
         } catch{
+            explain(error: error)
             throw error
         }
     }
     
     func postString<T: Encodable>(_ functionName: String, data: T) async throws -> String {
-        let request = try buildPostRequest(functionName, data: data)
-        
-        let (responseData, _) = try await URLSession.shared.data(for: request)
-        guard let string = String(data: responseData, encoding: .utf8) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildPostRequest(functionName, data: data)
+            
+            let (responseData, _) = try await URLSession.shared.data(for: request)
+            guard let string = String(data: responseData, encoding: .utf8) else {
+                throw URLError(.badServerResponse)
+            }
+            return string
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return string
     }
 
     func postInt<T: Encodable>(_ functionName: String, data: T) async throws -> Int {
-        let request = try buildPostRequest(functionName, data: data)
-        let (responseData, _) = try await URLSession.shared.data(for: request)
-
-        guard let string = String(data: responseData, encoding: .utf8),
-              let int = Int(string) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildPostRequest(functionName, data: data)
+            let (responseData, _) = try await URLSession.shared.data(for: request)
+            
+            guard let string = String(data: responseData, encoding: .utf8),
+                  let int = Int(string) else {
+                throw URLError(.badServerResponse)
+            }
+            return int
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return int
     }
     
     func postDouble<T: Encodable>(_ functionName: String, data: T) async throws -> Double {
-        let request = try buildPostRequest(functionName, data: data)
-        let (responseData, _) = try await URLSession.shared.data(for: request)
-
-        guard let string = String(data: responseData, encoding: .utf8),
-              let double = Double(string) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildPostRequest(functionName, data: data)
+            let (responseData, _) = try await URLSession.shared.data(for: request)
+            
+            guard let string = String(data: responseData, encoding: .utf8),
+                  let double = Double(string) else {
+                throw URLError(.badServerResponse)
+            }
+            return double
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return double
     }
     
     func postBool<T: Encodable>(_ functionName: String, data: T) async throws -> Bool {
-        let request = try buildPostRequest(functionName, data: data)
-        let (responseData, _) = try await URLSession.shared.data(for: request)
-
-        guard let string = String(data: responseData, encoding: .utf8),
-              let bool = Bool(string) else {
-            throw URLError(.badServerResponse)
+        do{
+            let request = try buildPostRequest(functionName, data: data)
+            let (responseData, _) = try await URLSession.shared.data(for: request)
+            
+            guard let string = String(data: responseData, encoding: .utf8),
+                  let bool = Bool(string) else {
+                throw URLError(.badServerResponse)
+            }
+            return bool
+        }catch{
+            explain(error: error)
+            throw error
         }
-        return bool
+    }
+    
+    func explain(error: Error){
+        //TODO: Something better here
+        print(error)
     }
 }
 
