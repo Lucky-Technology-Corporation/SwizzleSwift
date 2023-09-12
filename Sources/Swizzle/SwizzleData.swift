@@ -122,7 +122,7 @@ extension Swizzle{
                         completion(defaultValue)
                     }
                 } else {
-                    print("[Swizzle] Failed to fetch data for key \(key): \(error)")
+                    print("[Swizzle] DB lookup failed for \(key) (\(error))")
                     DispatchQueue.main.async {
                         completion(defaultValue)
                     }

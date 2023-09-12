@@ -88,7 +88,7 @@ public class SwizzleFunction<T: Codable>: ObservableObject, Swizzleable {
                     } catch { }
                 }
             } catch {
-                print("[Swizzle] Failed to fetch data from endpoint \(endpoint): \(error)")
+                print("[Swizzle] Endpoint failed: /\(endpoint) (\(error))odel")
             }
         }
     }

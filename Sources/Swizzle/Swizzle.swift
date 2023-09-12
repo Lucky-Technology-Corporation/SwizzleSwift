@@ -165,7 +165,7 @@ public class Swizzle {
     }
     
     #if canImport(UIKit)
-    public func upload(image: UIImage, size: CGSize = CGSize(width: 200, height: 200), compressionQuality: CGFloat = 0.7) async throws -> URL{
+    public func upload(image: UIImage, size: CGSize = CGSize(width: 500, height: 500), compressionQuality: CGFloat = 0.7) async throws -> URL{
         let imageData = image.resized(to: size)?.jpegData(compressionQuality: compressionQuality)
         guard let base64String = imageData?.base64EncodedString() else { throw SwizzleError.badImage }
 
@@ -176,7 +176,7 @@ public class Swizzle {
         return url
     }
     #endif
-
+    
     
     //REST APIs
     func getData(_ functionName: String) async throws -> Data {
@@ -187,12 +187,16 @@ public class Swizzle {
     }
     
     func getCodable<T: Decodable>(_ functionName: String) async throws -> T {
-        let request = try buildGetRequest(functionName)
-
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(T.self, from: data)
-        return response
+        do{
+            let request = try buildGetRequest(functionName)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(T.self, from: data)
+            return response
+        }catch{
+            throw error
+        }
     }
     
     func getString(_ functionName: String) async throws -> String {
@@ -245,12 +249,16 @@ public class Swizzle {
     }
 
     func postCodable<T: Encodable, U: Decodable>(_ functionName: String, data: T) async throws -> U {
-        let request = try buildPostRequest(functionName, data: data)
-
-        let (responseData, _) = try await URLSession.shared.data(for: request)
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(U.self, from: responseData)
-        return response
+        do{
+            let request = try buildPostRequest(functionName, data: data)
+            let (responseData, _) = try await URLSession.shared.data(for: request)
+            let decoder = JSONDecoder()
+            var response: U?
+            response = try decoder.decode(U.self, from: responseData)
+            return response!
+        } catch{
+            throw error
+        }
     }
     
     func postString<T: Encodable>(_ functionName: String, data: T) async throws -> String {
