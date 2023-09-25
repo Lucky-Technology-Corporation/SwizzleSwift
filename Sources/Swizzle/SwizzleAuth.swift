@@ -82,6 +82,30 @@ extension Swizzle{
         }
     }
     
+    public func setUserMetadata(_ metadata: [String: AnyEncodable]) async throws -> Bool{
+        do {
+            try await post(ignoringResponseFrom: "swizzle/auth/metadata", data: metadata)
+            return true
+        } catch {
+            print("[Swizzle] Couldn't set user metadata.")
+            return false
+        }
+    }
+    
+    public func setUserPushToken(_ tokenData: Data) async {
+        let tokenString = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
+        let params = ["pushToken": tokenString]
+        do {
+            try await post(ignoringResponseFrom: "swizzle/auth/push-token", data: params)
+            return
+        } catch {
+            print("[Swizzle] Couldn't set user push notification token.")
+            return
+        }
+    }
+
+
+    
     private func anonymousLogin() async {
         let params = ["deviceId": deviceId]
 

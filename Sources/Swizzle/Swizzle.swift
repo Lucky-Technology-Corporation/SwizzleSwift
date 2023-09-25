@@ -66,7 +66,7 @@ public class Swizzle {
         var url = projectId
         apiBaseURL = URL(string: url)
     }
-    
+
     
     //Easy function call getters
     public func get<T: Decodable>(_ functionName: String) async throws -> T {

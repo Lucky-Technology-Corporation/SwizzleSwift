@@ -171,6 +171,19 @@ extension Swizzle{
     
 }
 
+public struct AnyEncodable: Encodable {
+    private var _encode: (Encoder) throws -> Void
+    
+    public init<T: Encodable>(_ value: T) {
+        self._encode = value.encode(to:)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        try _encode(encoder)
+    }
+}
+
+
 protocol Swizzleable {
     func bindPublisher(_ publisher: ObservableObjectPublisher)
 }
